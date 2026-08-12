@@ -70,4 +70,34 @@ describe("auth", () => {
     const res = await agent().get("/api/auth/init-admin");
     expect(res.status).toBe(404);
   });
+
+  it("changes login (email) when current password is correct", async () => {
+    const { agent: a } = await registerScientist("old-login@test.local");
+    const res = await a.patch("/api/auth/email").send({ newLogin: "new-login@test.local", currentPassword: "Password123" });
+    expect(res.status).toBe(200);
+    expect(res.body.data.email).toBe("new-login@test.local");
+
+    const loginRes = await agent().post("/api/auth/login").send({ email: "new-login@test.local", password: "Password123" });
+    expect(loginRes.status).toBe(200);
+  });
+
+  it("rejects login change with wrong current password", async () => {
+    const { agent: a } = await registerScientist("keep-login@test.local");
+    const res = await a.patch("/api/auth/email").send({ newLogin: "hijacked@test.local", currentPassword: "WrongPass1" });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects login change to an already-taken login", async () => {
+    await registerScientist("taken@test.local");
+    const { agent: a } = await registerScientist("wants-taken@test.local");
+    const res = await a.patch("/api/auth/email").send({ newLogin: "taken@test.local", currentPassword: "Password123" });
+    expect(res.status).toBe(422);
+  });
+
+  it("allows a non-email login string (e.g. 'superadmin')", async () => {
+    const { agent: a } = await registerScientist("plain-login-owner@test.local");
+    const res = await a.patch("/api/auth/email").send({ newLogin: "superadmin2", currentPassword: "Password123" });
+    expect(res.status).toBe(200);
+    expect(res.body.data.email).toBe("superadmin2");
+  });
 });

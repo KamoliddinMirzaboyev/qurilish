@@ -94,6 +94,17 @@ export const changePasswordSchema = z
   });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
+export const updateLoginSchema = z.object({
+  newLogin: z
+    .string({ required_error: "Yangi login/email kiriting." })
+    .trim()
+    .toLowerCase()
+    .min(3, "Login kamida 3 ta belgidan iborat bo'lishi kerak.")
+    .max(255, "Login 255 ta belgidan oshmasligi kerak."),
+  currentPassword: z.string({ required_error: "Joriy parolni kiriting." }).min(1, "Joriy parolni kiriting."),
+});
+export type UpdateLoginInput = z.infer<typeof updateLoginSchema>;
+
 const categoryEnum = z.enum(
   [
     Category.CONSTRUCTION,

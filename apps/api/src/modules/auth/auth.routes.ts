@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerSchema, loginSchema, updateProfileSchema, changePasswordSchema } from "@buildscience/shared";
+import { registerSchema, loginSchema, updateProfileSchema, changePasswordSchema, updateLoginSchema } from "@buildscience/shared";
 import { validateBody } from "../../middleware/validate.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { authLimiter } from "../../middleware/rateLimit.js";
@@ -195,5 +195,44 @@ authRouter.patch(
       data: { passwordHash: await hashPassword(req.body.newPassword) },
     });
     ok(res, { updated: true });
+  })
+);
+
+/**
+ * @openapi
+ * /auth/email:
+ *   patch:
+ *     tags: [Auth]
+ *     summary: Login (email)ni almashtirish — joriy parol talab qilinadi
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [newLogin, currentPassword]
+ *             properties:
+ *               newLogin: { type: string }
+ *               currentPassword: { type: string }
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+authRouter.patch(
+  "/email",
+  requireAuth,
+  validateBody(updateLoginSchema),
+  asyncHandler(async (req, res) => {
+    const valid = await verifyPassword(req.body.currentPassword, req.user!.passwordHash);
+    if (!valid) throw AppError.badRequest("Joriy parol noto'g'ri.", { currentPassword: ["Joriy parol noto'g'ri."] });
+
+    const newLogin: string = req.body.newLogin;
+    const existing = await prisma.user.findUnique({ where: { email: newLogin } });
+    if (existing && existing.id !== req.user!.id) {
+      throw AppError.unprocessable("Bu login/email allaqachon band.", { newLogin: ["Bu login/email allaqachon band."] });
+    }
+
+    const updated = await prisma.user.update({ where: { id: req.user!.id }, data: { email: newLogin } });
+    ok(res, toAuthUser(updated));
   })
 );

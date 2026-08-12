@@ -1,7 +1,15 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { updateProfileSchema, changePasswordSchema, type UpdateProfileInput, type ChangePasswordInput, type AuthUser } from "@buildscience/shared";
+import {
+  updateProfileSchema,
+  changePasswordSchema,
+  updateLoginSchema,
+  type UpdateProfileInput,
+  type ChangePasswordInput,
+  type UpdateLoginInput,
+  type AuthUser,
+} from "@buildscience/shared";
 import { useAuth } from "@/features/auth/AuthContext";
 import { api, ApiRequestError } from "@/lib/api";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -39,6 +47,7 @@ export default function ProfilePage() {
   }, [user, profileForm]);
 
   const passwordForm = useForm<ChangePasswordInput>({ resolver: zodResolver(changePasswordSchema) });
+  const loginForm = useForm<UpdateLoginInput>({ resolver: zodResolver(updateLoginSchema) });
 
   async function onSaveProfile(values: UpdateProfileInput) {
     try {
@@ -63,6 +72,24 @@ export default function ProfilePage() {
     }
   }
 
+  async function onChangeLogin(values: UpdateLoginInput) {
+    try {
+      const updated = await api.patch<AuthUser>("/auth/email", values);
+      setUser(updated);
+      notify.success("Login o'zgartirildi.");
+      loginForm.reset({ newLogin: "", currentPassword: "" });
+    } catch (err) {
+      if (err instanceof ApiRequestError) {
+        notify.error(err.message);
+        if (err.errors) {
+          for (const [field, messages] of Object.entries(err.errors)) {
+            loginForm.setError(field as keyof UpdateLoginInput, { message: messages[0] });
+          }
+        }
+      }
+    }
+  }
+
   if (!user) return null;
 
   return (
@@ -81,7 +108,7 @@ export default function ProfilePage() {
             <Input id="name" {...profileForm.register("name")} />
           </FormField>
 
-          <FormField label="Email">
+          <FormField label="Login (email)" helperText="Login o'zgartirish uchun quyidagi bo'limdan foydalaning.">
             <Input value={user.email} disabled />
           </FormField>
 
@@ -111,6 +138,27 @@ export default function ProfilePage() {
 
           <Button type="submit" isLoading={profileForm.formState.isSubmitting} className="self-start">
             O'zgarishlarni saqlash
+          </Button>
+        </form>
+      </Card>
+
+      <Card className="flex flex-col gap-4">
+        <h2 className="font-semibold text-brand-dark">Login (email)ni almashtirish</h2>
+        <form onSubmit={loginForm.handleSubmit(onChangeLogin)} className="flex flex-col gap-4">
+          <FormField label="Yangi login/email" required error={loginForm.formState.errors.newLogin?.message} htmlFor="newLogin">
+            <Input id="newLogin" placeholder={user.email} {...loginForm.register("newLogin")} />
+          </FormField>
+          <FormField
+            label="Joriy parol"
+            required
+            helperText="Xavfsizlik uchun tasdiqlash kerak."
+            error={loginForm.formState.errors.currentPassword?.message}
+            htmlFor="loginCurrentPassword"
+          >
+            <PasswordInput id="loginCurrentPassword" {...loginForm.register("currentPassword")} />
+          </FormField>
+          <Button type="submit" isLoading={loginForm.formState.isSubmitting} variant="outline" className="self-start">
+            Loginni yangilash
           </Button>
         </form>
       </Card>
