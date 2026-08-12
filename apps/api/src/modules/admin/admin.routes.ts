@@ -12,7 +12,6 @@ import { hashPassword } from "../../utils/password.js";
 import { normalizePhone } from "../../utils/phone.js";
 import { toProblemListItem } from "../problems/problems.serializers.js";
 import { toProposalListItem } from "../proposals/proposals.serializers.js";
-import { toMineListItem } from "../mines/mines.serializers.js";
 import { toWasteListItem } from "../waste/waste.serializers.js";
 
 export const adminRouter = Router();
@@ -386,61 +385,6 @@ adminRouter.delete(
     const proposal = await prisma.proposal.findFirst({ where: { id: req.params.proposalId, deletedAt: null } });
     if (!proposal) throw AppError.notFound("Taklif topilmadi.");
     await prisma.proposal.update({ where: { id: proposal.id }, data: { deletedAt: new Date() } });
-    res.status(204).send();
-  })
-);
-
-/**
- * @openapi
- * /admin/mines:
- *   get:
- *     tags: [Admin]
- *     summary: Barcha konlar ro'yxati (SUPERADMIN)
- *     responses:
- *       200:
- *         description: OK
- */
-adminRouter.get(
-  "/mines",
-  validateQuery(paginationQuerySchema),
-  asyncHandler(async (req, res) => {
-    const { search, page, pageSize } = paginationQuerySchema.parse(req.query);
-    const where: Prisma.MineWhereInput = { deletedAt: null, ...(search ? { name: { contains: search, mode: "insensitive" } } : {}) };
-    const [mines, total] = await Promise.all([
-      prisma.mine.findMany({
-        where,
-        orderBy: { createdAt: sortOrder(req) },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        include: { admin: true, images: { orderBy: { sortOrder: "asc" } } },
-      }),
-      prisma.mine.count({ where }),
-    ]);
-    ok(res, paginate(mines.map(toMineListItem), page, pageSize, total));
-  })
-);
-
-/**
- * @openapi
- * /admin/mines/{mineId}:
- *   delete:
- *     tags: [Admin]
- *     summary: Konni o'chirish (soft delete, SUPERADMIN)
- *     parameters:
- *       - in: path
- *         name: mineId
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       204:
- *         description: O'chirildi
- */
-adminRouter.delete(
-  "/mines/:mineId",
-  asyncHandler(async (req, res) => {
-    const mine = await prisma.mine.findFirst({ where: { id: req.params.mineId, deletedAt: null } });
-    if (!mine) throw AppError.notFound("Kon topilmadi.");
-    await prisma.mine.update({ where: { id: mine.id }, data: { deletedAt: new Date() } });
     res.status(204).send();
   })
 );

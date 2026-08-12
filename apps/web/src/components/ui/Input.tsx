@@ -41,7 +41,7 @@ export function FormField({ label, helperText, error, required, children, htmlFo
 }
 
 const baseFieldClasses =
-  "h-11 w-full rounded-xl border border-surface-border bg-white px-3.5 text-sm text-ink placeholder:text-ink-muted focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20 disabled:bg-slate-50 disabled:text-ink-muted";
+  "h-10 w-full rounded-lg border border-surface-border bg-white px-3.5 text-sm text-ink placeholder:text-ink-muted focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20 disabled:bg-slate-50 disabled:text-ink-muted";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: boolean;
@@ -131,7 +131,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
     <textarea
       ref={ref}
       className={clsx(
-        "min-h-[140px] w-full rounded-xl border border-surface-border bg-white px-3.5 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20",
+        "min-h-[140px] w-full rounded-lg border border-surface-border bg-white px-3.5 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20",
         error && "border-danger",
         className
       )}

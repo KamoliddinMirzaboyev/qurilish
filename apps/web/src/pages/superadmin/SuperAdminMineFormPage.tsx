@@ -12,7 +12,7 @@ import { useCreateMine } from "@/features/mines/hooks";
 import { notify } from "@/components/ui/toast";
 import { ApiRequestError } from "@/lib/api";
 
-export default function AdminMineFormPage() {
+export default function SuperAdminMineFormPage() {
   const navigate = useNavigate();
   const createMutation = useCreateMine();
   const [images, setImages] = useState<File[]>([]);

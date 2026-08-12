@@ -34,13 +34,13 @@ export default function MineDetailPage() {
           {mine.images.length > 0 ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {mine.images.map((img) => (
-                <div key={img.id} className="aspect-square overflow-hidden rounded-xl bg-surface-muted">
+                <div key={img.id} className="aspect-square overflow-hidden rounded-lg bg-surface-muted">
                   <img src={img.url} alt={mine.name} className="h-full w-full object-cover" />
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex aspect-video items-center justify-center rounded-xl bg-surface-muted text-sm text-ink-muted">
+            <div className="flex aspect-video items-center justify-center rounded-lg bg-surface-muted text-sm text-ink-muted">
               Rasm yo'q
             </div>
           )}

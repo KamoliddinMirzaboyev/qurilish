@@ -27,7 +27,7 @@ export function GalleryUploader({ files, onChange }: { files: File[]; onChange: 
     <div>
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {previews.map((src, i) => (
-          <div key={src} className="relative aspect-square overflow-hidden rounded-xl border border-surface-border">
+          <div key={src} className="relative aspect-square overflow-hidden rounded-lg border border-surface-border">
             <img src={src} alt="" className="h-full w-full object-cover" />
             <IconButton
               label="Rasmni olib tashlash"
@@ -42,7 +42,7 @@ export function GalleryUploader({ files, onChange }: { files: File[]; onChange: 
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-surface-border bg-white text-ink-muted hover:border-brand-primary hover:text-brand-primary"
+            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-surface-border bg-white text-ink-muted hover:border-brand-primary hover:text-brand-primary"
           >
             <Plus size={20} aria-hidden />
             <span className="text-xs">Rasm qo'shish</span>

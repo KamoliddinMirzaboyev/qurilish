@@ -75,7 +75,7 @@ export default function ProblemDetailPage() {
           <p className="whitespace-pre-line text-sm leading-relaxed text-ink">{problem.description}</p>
 
           {problem.status !== "OPEN" && (
-            <div className="rounded-xl bg-slate-50 p-4 text-sm text-ink-muted">
+            <div className="rounded-lg bg-slate-50 p-4 text-sm text-ink-muted">
               {problem.status === "MATCHED"
                 ? "Ushbu muammo uchun olim allaqachon tanlangan, shu sababli yangi takliflar qabul qilinmaydi."
                 : "Ushbu e'lon yopilgan, shu sababli yangi takliflar qabul qilinmaydi."}
@@ -100,7 +100,7 @@ export default function ProblemDetailPage() {
           )}
 
           {user?.role === "USER" && myExistingProposal && (
-            <div className="rounded-xl bg-brand-primary/10 p-4 text-sm text-brand-primary">
+            <div className="rounded-lg bg-brand-primary/10 p-4 text-sm text-brand-primary">
               Siz bu muammoga taklif yuborgansiz.
               <Link to="/app/user/proposals" className="mt-1 block font-medium underline">
                 Taklifimni ko'rish

@@ -12,7 +12,7 @@ export function FileUploader({ file, onChange }: { file: File | null; onChange: 
 
   if (file) {
     return (
-      <div className="flex items-center justify-between rounded-xl border border-surface-border bg-white px-4 py-3">
+      <div className="flex items-center justify-between rounded-lg border border-surface-border bg-white px-4 py-3">
         <div className="flex items-center gap-2 text-sm text-ink">
           <FileText size={18} className="text-brand-primary" aria-hidden />
           <span className="truncate">{file.name}</span>
@@ -30,7 +30,7 @@ export function FileUploader({ file, onChange }: { file: File | null; onChange: 
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-surface-border bg-white px-4 py-4 text-sm text-ink-muted hover:border-brand-primary hover:text-brand-primary"
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-surface-border bg-white px-4 py-4 text-sm text-ink-muted hover:border-brand-primary hover:text-brand-primary"
       >
         <Paperclip size={18} aria-hidden />
         Fayl biriktirish

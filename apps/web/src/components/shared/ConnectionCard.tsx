@@ -5,7 +5,7 @@ import { notify } from "@/components/ui/toast";
 import { formatDate } from "@/lib/format";
 
 const linkButtonClasses =
-  "inline-flex items-center gap-2 rounded-xl border border-surface-border bg-white px-3 h-9 text-sm font-medium text-ink hover:bg-slate-50";
+  "inline-flex items-center gap-2 rounded-lg border border-surface-border bg-white px-3 h-9 text-sm font-medium text-ink hover:bg-slate-50";
 
 export function ConnectionCard({
   problemId,
@@ -38,7 +38,7 @@ export function ConnectionCard({
         <p className="mt-1 text-xs text-ink-muted">Qabul qilingan sana: {formatDate(acceptedAt)}</p>
       </div>
 
-      <div className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3 text-sm">
+      <div className="flex flex-col gap-2 rounded-lg bg-slate-50 p-3 text-sm">
         <div className="flex items-center justify-between gap-2">
           <span className="flex items-center gap-2 text-ink">
             <Phone size={16} className="text-brand-primary" /> {phone}

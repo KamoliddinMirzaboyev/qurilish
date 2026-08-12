@@ -26,8 +26,6 @@ const AdminProblemsPage = lazy(() => import("@/pages/admin/AdminProblemsPage"));
 const AdminProblemFormPage = lazy(() => import("@/pages/admin/AdminProblemFormPage"));
 const AdminProblemProposalsPage = lazy(() => import("@/pages/admin/AdminProblemProposalsPage"));
 const AdminProposalsPage = lazy(() => import("@/pages/admin/AdminProposalsPage"));
-const AdminMinesPage = lazy(() => import("@/pages/admin/AdminMinesPage"));
-const AdminMineFormPage = lazy(() => import("@/pages/admin/AdminMineFormPage"));
 const AdminWastePage = lazy(() => import("@/pages/admin/AdminWastePage"));
 const AdminWasteFormPage = lazy(() => import("@/pages/admin/AdminWasteFormPage"));
 
@@ -43,6 +41,7 @@ const SuperAdminAdminsPage = lazy(() => import("@/pages/superadmin/SuperAdminAdm
 const SuperAdminProblemsPage = lazy(() => import("@/pages/superadmin/SuperAdminProblemsPage"));
 const SuperAdminProposalsPage = lazy(() => import("@/pages/superadmin/SuperAdminProposalsPage"));
 const SuperAdminMinesPage = lazy(() => import("@/pages/superadmin/SuperAdminMinesPage"));
+const SuperAdminMineFormPage = lazy(() => import("@/pages/superadmin/SuperAdminMineFormPage"));
 const SuperAdminWastePage = lazy(() => import("@/pages/superadmin/SuperAdminWastePage"));
 
 export default function App() {
@@ -82,8 +81,6 @@ export default function App() {
                       <Route path="/app/admin/problems/new" element={<AdminProblemFormPage />} />
                       <Route path="/app/admin/problems/:problemId/edit" element={<AdminProblemFormPage />} />
                       <Route path="/app/admin/problems/:problemId/proposals" element={<AdminProblemProposalsPage />} />
-                      <Route path="/app/admin/mines" element={<AdminMinesPage />} />
-                      <Route path="/app/admin/mines/new" element={<AdminMineFormPage />} />
                       <Route path="/app/admin/waste" element={<AdminWastePage />} />
                       <Route path="/app/admin/waste/new" element={<AdminWasteFormPage />} />
                     </Route>
@@ -102,6 +99,7 @@ export default function App() {
                       <Route path="/superadmin/problems" element={<SuperAdminProblemsPage />} />
                       <Route path="/superadmin/proposals" element={<SuperAdminProposalsPage />} />
                       <Route path="/superadmin/mines" element={<SuperAdminMinesPage />} />
+                      <Route path="/superadmin/mines/new" element={<SuperAdminMineFormPage />} />
                       <Route path="/superadmin/waste" element={<SuperAdminWastePage />} />
                     </Route>
                   </Route>

@@ -27,7 +27,7 @@ export default {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       borderRadius: {
-        card: "16px",
+        card: "10px",
       },
       maxWidth: {
         content: "1280px",

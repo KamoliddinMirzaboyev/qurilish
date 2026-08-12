@@ -24,9 +24,6 @@ export default function AdminDashboardPage() {
         title={`Xush kelibsiz, ${user?.name}`}
         action={
           <div className="flex flex-wrap gap-2">
-            <Button asLink to="/app/admin/mines/new" variant="outline">
-              <Plus size={16} /> Kon qo'shish
-            </Button>
             <Button asLink to="/app/admin/waste/new" variant="outline">
               <Plus size={16} /> Chiqindi qo'shish
             </Button>

@@ -72,19 +72,19 @@ minesRouter.get(
  * /admin/mines:
  *   get:
  *     tags: [Mines]
- *     summary: O'z konlarim ro'yxati (ADMIN)
+ *     summary: Barcha konlar ro'yxati (SUPERADMIN)
  *     responses:
  *       200:
  *         description: OK
  */
 minesRouter.get(
-  "/company/mines",
+  "/admin/mines",
   requireAuth,
-  requireRole("ADMIN"),
+  requireRole("SUPERADMIN"),
   validateQuery(paginationQuerySchema),
   asyncHandler(async (req, res) => {
-    const { page, pageSize } = paginationQuerySchema.parse(req.query);
-    const where = { deletedAt: null, adminId: req.user!.id };
+    const { search, page, pageSize } = paginationQuerySchema.parse(req.query);
+    const where = { deletedAt: null, ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}) };
     const [mines, total] = await Promise.all([
       prisma.mine.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize, include }),
       prisma.mine.count({ where }),
@@ -98,7 +98,7 @@ minesRouter.get(
  * /admin/mines:
  *   post:
  *     tags: [Mines]
- *     summary: Yangi kon joylashtirish (ADMIN, rasm galereyasi bilan)
+ *     summary: Yangi kon joylashtirish (SUPERADMIN, rasm galereyasi bilan)
  *     requestBody:
  *       required: true
  *       content:
@@ -118,9 +118,9 @@ minesRouter.get(
  *         description: Yaratildi
  */
 minesRouter.post(
-  "/company/mines",
+  "/admin/mines",
   requireAuth,
-  requireRole("ADMIN"),
+  requireRole("SUPERADMIN"),
   handleGalleryUpload,
   asyncHandler(async (req, res) => {
     const parsed = mineSchema.safeParse(req.body);
@@ -159,7 +159,7 @@ minesRouter.post(
  * /admin/mines/{mineId}:
  *   delete:
  *     tags: [Mines]
- *     summary: Konni o'chirish (o'zi joylashtirgan ADMIN)
+ *     summary: Konni o'chirish (SUPERADMIN)
  *     parameters:
  *       - in: path
  *         name: mineId
@@ -170,13 +170,12 @@ minesRouter.post(
  *         description: O'chirildi
  */
 minesRouter.delete(
-  "/company/mines/:mineId",
+  "/admin/mines/:mineId",
   requireAuth,
-  requireRole("ADMIN"),
+  requireRole("SUPERADMIN"),
   asyncHandler(async (req, res) => {
     const mine = await prisma.mine.findFirst({ where: { id: req.params.mineId, deletedAt: null }, include: { images: true } });
     if (!mine) throw AppError.notFound("Kon topilmadi.");
-    if (mine.adminId !== req.user!.id) throw AppError.forbidden();
     await prisma.mine.update({ where: { id: mine.id }, data: { deletedAt: new Date() } });
     await Promise.all(mine.images.map((img) => fs.unlink(path.join(uploadPublicRoot, img.storedName)).catch(() => undefined)));
     res.status(204).send();

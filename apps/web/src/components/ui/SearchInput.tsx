@@ -21,14 +21,20 @@ export function SearchInput({
   );
 }
 
+/** Har bir filtr elementi (Select/Button) `w-full` ishlatadi — flex-row ichida cheklovsiz qoldirilsa,
+ * flex-basis butun qatorni egallab, boshqalarni pastga suradi. Shu wrapper kenglikni cheklaydi. */
+function FilterItem({ children }: { children: React.ReactNode }) {
+  return <div className="sm:w-auto sm:min-w-[9.5rem] sm:flex-none">{children}</div>;
+}
+
 export function FilterBar({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [search, ...rest] = Children.toArray(children);
   const hasFilters = rest.length > 0;
 
   return (
-    <div className="rounded-card border border-surface-border bg-white p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+    <div className="rounded-card border border-surface-border bg-white p-3">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
         {search}
 
         {hasFilters && (
@@ -36,7 +42,7 @@ export function FilterBar({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
-            className="flex h-11 items-center justify-center gap-2 rounded-xl border border-surface-border px-3.5 text-sm font-medium text-ink transition-colors hover:border-brand-primary hover:text-brand-primary sm:hidden"
+            className="flex h-10 items-center justify-center gap-2 rounded-lg border border-surface-border px-3.5 text-sm font-medium text-ink transition-colors hover:border-brand-primary hover:text-brand-primary sm:hidden"
           >
             <SlidersHorizontal size={16} />
             Filtrlar
@@ -44,7 +50,13 @@ export function FilterBar({ children }: { children: React.ReactNode }) {
           </button>
         )}
 
-        {hasFilters && <div className="hidden sm:contents">{rest}</div>}
+        {hasFilters && (
+          <div className="hidden sm:contents">
+            {rest.map((child, i) => (
+              <FilterItem key={i}>{child}</FilterItem>
+            ))}
+          </div>
+        )}
       </div>
 
       {hasFilters && (
@@ -57,7 +69,7 @@ export function FilterBar({ children }: { children: React.ReactNode }) {
               transition={{ duration: 0.2, ease: "easeOut" }}
               className="overflow-hidden sm:hidden"
             >
-              <div className="mt-3 flex flex-col gap-3">{rest}</div>
+              <div className="mt-2.5 flex flex-col gap-2.5">{rest}</div>
             </motion.div>
           )}
         </AnimatePresence>

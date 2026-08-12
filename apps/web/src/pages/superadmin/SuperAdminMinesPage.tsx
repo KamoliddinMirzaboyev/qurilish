@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useAdminMinesModeration, useDeleteAdminMine } from "@/features/admin/hooks";
 import { useDebounce } from "@/hooks/useDebounce";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput, FilterBar } from "@/components/ui/SearchInput";
 import { Card, EmptyState, CardGridSkeleton } from "@/components/ui/Card";
-import { IconButton } from "@/components/ui/Button";
+import { Button, IconButton } from "@/components/ui/Button";
 import { ConfirmationDialog } from "@/components/ui/Modal";
 import { Pagination } from "@/components/ui/Pagination";
 import { notify } from "@/components/ui/toast";
@@ -34,7 +34,14 @@ export default function SuperAdminMinesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Konlar (moderatsiya)" />
+      <PageHeader
+        title="Konlar"
+        action={
+          <Button asLink to="/superadmin/mines/new">
+            <Plus size={16} /> Yangi kon
+          </Button>
+        }
+      />
 
       <FilterBar>
         <div className="min-w-[220px] flex-1">

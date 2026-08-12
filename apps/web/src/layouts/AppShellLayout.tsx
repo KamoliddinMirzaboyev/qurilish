@@ -19,7 +19,6 @@ const navByRole: Record<string, NavItem[]> = {
     { label: "Boshqaruv paneli", to: "/app/admin", end: true },
     { label: "Muammolarim", to: "/app/admin/problems" },
     { label: "Takliflar", to: "/app/admin/proposals" },
-    { label: "Konlarim", to: "/app/admin/mines" },
     { label: "Chiqindilarim", to: "/app/admin/waste" },
     { label: "Bog'lanishlar", to: "/app/connections" },
     { label: "Profil", to: "/app/profile" },
@@ -54,7 +53,7 @@ function NavLinks({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => 
           onClick={onNavigate}
           className={({ isActive }) =>
             clsx(
-              "rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors duration-150",
+              "rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors duration-150",
               isActive ? "bg-brand-primary/10 text-brand-primary" : "text-ink-muted hover:bg-slate-100 hover:text-ink"
             )
           }
@@ -102,7 +101,7 @@ export function AppShellLayout() {
         <NavLinks items={items} />
         <button
           onClick={handleLogout}
-          className="mt-auto flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium text-danger hover:bg-red-50"
+          className="mt-auto flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-danger hover:bg-red-50"
         >
           <LogOut size={16} /> Chiqish
         </button>
@@ -117,7 +116,7 @@ export function AppShellLayout() {
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setUserMenuOpen((v) => !v)}
-              className="flex items-center gap-2.5 rounded-xl py-1.5 pl-1.5 pr-3 transition-colors hover:bg-slate-100"
+              className="flex items-center gap-2.5 rounded-lg py-1.5 pl-1.5 pr-3 transition-colors hover:bg-slate-100"
             >
               <UserAvatar name={user.name} size={34} />
               <span className="hidden text-sm font-medium text-ink md:block">{user.name}</span>
@@ -125,7 +124,7 @@ export function AppShellLayout() {
             </button>
 
             {userMenuOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-surface-border bg-white shadow-lg">
+              <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-lg border border-surface-border bg-white shadow-lg">
                 <div className="border-b border-surface-border px-4 py-3">
                   <p className="text-sm font-semibold text-ink">{user.name}</p>
                   <p className="text-xs text-ink-muted">{user.email}</p>
@@ -162,7 +161,7 @@ export function AppShellLayout() {
               <NavLinks items={items} onNavigate={() => setDrawerOpen(false)} />
               <button
                 onClick={handleLogout}
-                className="mt-6 flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium text-danger hover:bg-red-50"
+                className="mt-6 flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-danger hover:bg-red-50"
               >
                 <LogOut size={16} /> Chiqish
               </button>

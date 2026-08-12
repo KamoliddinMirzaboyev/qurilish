@@ -18,13 +18,6 @@ export function useMine(mineId: string | undefined) {
   });
 }
 
-export function useAdminMines(page: number) {
-  return useQuery({
-    queryKey: ["admin-own-mines", page],
-    queryFn: () => api.get<Paginated<MineListItem>>(`/company/mines${toQueryString({ page, pageSize: 20 })}`),
-  });
-}
-
 function toFormData(input: MineInput, images: File[]) {
   const formData = new FormData();
   formData.append("name", input.name);
@@ -36,24 +29,14 @@ function toFormData(input: MineInput, images: File[]) {
   return formData;
 }
 
+/** SUPERADMIN — /admin/mines orqali yangi kon joylashtiradi. */
 export function useCreateMine() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ input, images }: { input: MineInput; images: File[] }) =>
-      api.postForm<MineDetail>("/company/mines", toFormData(input, images)),
+      api.postForm<MineDetail>("/admin/mines", toFormData(input, images)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-own-mines"] });
-      queryClient.invalidateQueries({ queryKey: ["mines"] });
-    },
-  });
-}
-
-export function useDeleteMine() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (mineId: string) => api.delete(`/company/mines/${mineId}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-own-mines"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-mines-moderation"] });
       queryClient.invalidateQueries({ queryKey: ["mines"] });
     },
   });

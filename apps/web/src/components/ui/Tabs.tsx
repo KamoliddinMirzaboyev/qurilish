@@ -10,7 +10,7 @@ export function Tabs<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <div role="tablist" className="flex gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1">
+    <div role="tablist" className="flex gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1">
       {tabs.map((tab) => (
         <button
           key={tab.value}

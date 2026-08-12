@@ -7,7 +7,7 @@ export function MineCard({ mine }: { mine: MineListItem }) {
   return (
     <Link to={`/mines/${mine.id}`}>
       <Card className="flex h-full flex-col gap-3 transition-shadow hover:shadow-md">
-        <div className="aspect-video overflow-hidden rounded-xl bg-surface-muted">
+        <div className="aspect-video overflow-hidden rounded-lg bg-surface-muted">
           {mine.coverImageUrl ? (
             <img src={mine.coverImageUrl} alt={mine.name} className="h-full w-full object-cover" />
           ) : (

@@ -37,7 +37,7 @@ export function DropdownMenu({
         <div
           role="menu"
           className={clsx(
-            "absolute z-20 mt-2 min-w-[180px] rounded-xl border border-surface-border bg-white p-1.5 shadow-lg",
+            "absolute z-20 mt-2 min-w-[180px] rounded-lg border border-surface-border bg-white p-1.5 shadow-lg",
             align === "right" ? "right-0" : "left-0"
           )}
           onClick={() => setOpen(false)}

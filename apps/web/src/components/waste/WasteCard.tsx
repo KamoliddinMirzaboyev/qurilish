@@ -7,7 +7,7 @@ export function WasteCard({ waste }: { waste: WasteListItem }) {
   return (
     <Link to={`/waste/${waste.id}`}>
       <Card className="flex h-full flex-col gap-3 transition-shadow hover:shadow-md">
-        <div className="aspect-video overflow-hidden rounded-xl bg-surface-muted">
+        <div className="aspect-video overflow-hidden rounded-lg bg-surface-muted">
           {waste.coverImageUrl ? (
             <img src={waste.coverImageUrl} alt={waste.factoryName} className="h-full w-full object-cover" />
           ) : (

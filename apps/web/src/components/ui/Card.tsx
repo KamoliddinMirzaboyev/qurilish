@@ -21,7 +21,7 @@ export function StatCard({ label, value, icon, color = "brand" }: { label: strin
   return (
     <Card className="flex items-start gap-4">
       {icon && (
-        <div className={clsx("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", colorMap[color])}>
+        <div className={clsx("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg", colorMap[color])}>
           {icon}
         </div>
       )}
@@ -58,7 +58,7 @@ export function ErrorState({ title = "Ma'lumotlarni yuklashda xatolik yuz berdi.
 }
 
 export function LoadingSkeleton({ className }: { className?: string }) {
-  return <div className={clsx("animate-pulse rounded-xl bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_100%] [animation:shimmer_1.5s_ease-in-out_infinite]", className)} />;
+  return <div className={clsx("animate-pulse rounded-lg bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_100%] [animation:shimmer_1.5s_ease-in-out_infinite]", className)} />;
 }
 
 export function CardGridSkeleton({ count = 6 }: { count?: number }) {
