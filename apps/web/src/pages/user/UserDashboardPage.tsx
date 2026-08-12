@@ -10,7 +10,7 @@ import { ProposalStatusBadge } from "@/components/ui/Badge";
 import { ProblemCard } from "@/components/problems/ProblemCard";
 import { formatDate, formatMoney } from "@/lib/format";
 
-export default function ScientistDashboardPage() {
+export default function UserDashboardPage() {
   const { user } = useAuth();
   const { data: problems, isLoading: problemsLoading } = useProblems({ sort: "newest", page: 1, pageSize: 3 });
   const { data: myProposals, isLoading: proposalsLoading } = useMyProposals();

@@ -20,7 +20,7 @@ const sortOptions = [
   { value: "oldest", label: "Eng eski" },
 ];
 
-export default function AdminUsersPage() {
+export default function SuperAdminUsersPage() {
   const { user: me } = useAuth();
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("ALL");
@@ -104,7 +104,7 @@ export default function AdminUsersPage() {
                 <Button size="sm" variant="outline" onClick={() => setViewTarget(u)}>
                   Ko'rish
                 </Button>
-                {u.id !== me?.id && u.role !== "ADMIN" && (
+                {u.id !== me?.id && u.role !== "SUPERADMIN" && (
                   <>
                     <Button size="sm" variant="outline" onClick={() => setBlockTarget(u)}>
                       {u.status === "ACTIVE" ? "Bloklash" : "Faollashtirish"}

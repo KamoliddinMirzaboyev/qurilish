@@ -31,6 +31,7 @@ export const env = {
   cookieSecure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === "1" : isProduction,
   uploadDir: process.env.UPLOAD_DIR ?? "uploads",
   maxUploadMb: Number(process.env.MAX_UPLOAD_MB ?? 10),
+  publicUploadBaseUrl: process.env.PUBLIC_UPLOAD_BASE_URL ?? "/uploads/public",
   pgPoolMax: Number(process.env.PG_POOL_MAX ?? 10),
   admin: {
     name: process.env.ADMIN_NAME ?? "",

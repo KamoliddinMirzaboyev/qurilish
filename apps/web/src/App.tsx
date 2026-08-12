@@ -12,30 +12,38 @@ import { RequireAuth, RequireGuest, RequireRole } from "@/routes/guards";
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const ProblemsListPage = lazy(() => import("@/pages/ProblemsListPage"));
 const ProblemDetailPage = lazy(() => import("@/pages/ProblemDetailPage"));
+const MinesListPage = lazy(() => import("@/pages/MinesListPage"));
+const MineDetailPage = lazy(() => import("@/pages/MineDetailPage"));
+const WasteListPage = lazy(() => import("@/pages/WasteListPage"));
+const WasteDetailPage = lazy(() => import("@/pages/WasteDetailPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/RegisterPage"));
 const ForbiddenPage = lazy(() => import("@/pages/ForbiddenPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 
-const CompanyDashboardPage = lazy(() => import("@/pages/company/CompanyDashboardPage"));
-const CompanyProblemsPage = lazy(() => import("@/pages/company/CompanyProblemsPage"));
-const CompanyProblemFormPage = lazy(() => import("@/pages/company/CompanyProblemFormPage"));
-const CompanyProblemProposalsPage = lazy(() => import("@/pages/company/CompanyProblemProposalsPage"));
-const CompanyProposalsPage = lazy(() => import("@/pages/company/CompanyProposalsPage"));
+const AdminDashboardPage = lazy(() => import("@/pages/admin/AdminDashboardPage"));
+const AdminProblemsPage = lazy(() => import("@/pages/admin/AdminProblemsPage"));
+const AdminProblemFormPage = lazy(() => import("@/pages/admin/AdminProblemFormPage"));
+const AdminProblemProposalsPage = lazy(() => import("@/pages/admin/AdminProblemProposalsPage"));
+const AdminProposalsPage = lazy(() => import("@/pages/admin/AdminProposalsPage"));
+const AdminMinesPage = lazy(() => import("@/pages/admin/AdminMinesPage"));
+const AdminMineFormPage = lazy(() => import("@/pages/admin/AdminMineFormPage"));
+const AdminWastePage = lazy(() => import("@/pages/admin/AdminWastePage"));
+const AdminWasteFormPage = lazy(() => import("@/pages/admin/AdminWasteFormPage"));
 
-const ScientistDashboardPage = lazy(() => import("@/pages/scientist/ScientistDashboardPage"));
-const ScientistProposalsPage = lazy(() => import("@/pages/scientist/ScientistProposalsPage"));
+const UserDashboardPage = lazy(() => import("@/pages/user/UserDashboardPage"));
+const UserProposalsPage = lazy(() => import("@/pages/user/UserProposalsPage"));
 
 const ConnectionsPage = lazy(() => import("@/pages/ConnectionsPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 
-const AdminDashboardPage = lazy(() => import("@/pages/admin/AdminDashboardPage"));
-const AdminUsersPage = lazy(() => import("@/pages/admin/AdminUsersPage"));
-const AdminProblemsPage = lazy(() => import("@/pages/admin/AdminProblemsPage"));
-const AdminProposalsPage = lazy(() => import("@/pages/admin/AdminProposalsPage"));
-
-const ExpertDashboardPage = lazy(() => import("@/pages/expert/ExpertDashboardPage"));
-const ExpertProposalReviewPage = lazy(() => import("@/pages/expert/ExpertProposalReviewPage"));
+const SuperAdminDashboardPage = lazy(() => import("@/pages/superadmin/SuperAdminDashboardPage"));
+const SuperAdminUsersPage = lazy(() => import("@/pages/superadmin/SuperAdminUsersPage"));
+const SuperAdminAdminsPage = lazy(() => import("@/pages/superadmin/SuperAdminAdminsPage"));
+const SuperAdminProblemsPage = lazy(() => import("@/pages/superadmin/SuperAdminProblemsPage"));
+const SuperAdminProposalsPage = lazy(() => import("@/pages/superadmin/SuperAdminProposalsPage"));
+const SuperAdminMinesPage = lazy(() => import("@/pages/superadmin/SuperAdminMinesPage"));
+const SuperAdminWastePage = lazy(() => import("@/pages/superadmin/SuperAdminWastePage"));
 
 export default function App() {
   return (
@@ -49,6 +57,10 @@ export default function App() {
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/problems" element={<ProblemsListPage />} />
                   <Route path="/problems/:problemId" element={<ProblemDetailPage />} />
+                  <Route path="/mines" element={<MinesListPage />} />
+                  <Route path="/mines/:mineId" element={<MineDetailPage />} />
+                  <Route path="/waste" element={<WasteListPage />} />
+                  <Route path="/waste/:wasteId" element={<WasteDetailPage />} />
                   <Route path="/forbidden" element={<ForbiddenPage />} />
                   <Route path="*" element={<NotFoundPage />} />
 
@@ -63,32 +75,34 @@ export default function App() {
                     <Route path="/app/profile" element={<ProfilePage />} />
                     <Route path="/app/connections" element={<ConnectionsPage />} />
 
-                    <Route element={<RequireRole roles={["COMPANY"]} />}>
-                      <Route path="/app/company" element={<CompanyDashboardPage />} />
-                      <Route path="/app/company/problems" element={<CompanyProblemsPage />} />
-                      <Route path="/app/company/proposals" element={<CompanyProposalsPage />} />
-                      <Route path="/app/company/problems/new" element={<CompanyProblemFormPage />} />
-                      <Route path="/app/company/problems/:problemId/edit" element={<CompanyProblemFormPage />} />
-                      <Route path="/app/company/problems/:problemId/proposals" element={<CompanyProblemProposalsPage />} />
+                    <Route element={<RequireRole roles={["ADMIN"]} />}>
+                      <Route path="/app/admin" element={<AdminDashboardPage />} />
+                      <Route path="/app/admin/problems" element={<AdminProblemsPage />} />
+                      <Route path="/app/admin/proposals" element={<AdminProposalsPage />} />
+                      <Route path="/app/admin/problems/new" element={<AdminProblemFormPage />} />
+                      <Route path="/app/admin/problems/:problemId/edit" element={<AdminProblemFormPage />} />
+                      <Route path="/app/admin/problems/:problemId/proposals" element={<AdminProblemProposalsPage />} />
+                      <Route path="/app/admin/mines" element={<AdminMinesPage />} />
+                      <Route path="/app/admin/mines/new" element={<AdminMineFormPage />} />
+                      <Route path="/app/admin/waste" element={<AdminWastePage />} />
+                      <Route path="/app/admin/waste/new" element={<AdminWasteFormPage />} />
                     </Route>
 
-                    <Route element={<RequireRole roles={["SCIENTIST"]} />}>
-                      <Route path="/app/scientist" element={<ScientistDashboardPage />} />
+                    <Route element={<RequireRole roles={["USER"]} />}>
+                      <Route path="/app/user" element={<UserDashboardPage />} />
                       <Route path="/app/problems" element={<ProblemsListPage />} />
                       <Route path="/app/problems/:problemId" element={<ProblemDetailPage />} />
-                      <Route path="/app/scientist/proposals" element={<ScientistProposalsPage />} />
+                      <Route path="/app/user/proposals" element={<UserProposalsPage />} />
                     </Route>
 
-                    <Route element={<RequireRole roles={["EXPERT"]} />}>
-                      <Route path="/app/expert" element={<ExpertDashboardPage />} />
-                      <Route path="/app/expert/proposals/:proposalId" element={<ExpertProposalReviewPage />} />
-                    </Route>
-
-                    <Route element={<RequireRole roles={["ADMIN"]} />}>
-                      <Route path="/admin" element={<AdminDashboardPage />} />
-                      <Route path="/admin/users" element={<AdminUsersPage />} />
-                      <Route path="/admin/problems" element={<AdminProblemsPage />} />
-                      <Route path="/admin/proposals" element={<AdminProposalsPage />} />
+                    <Route element={<RequireRole roles={["SUPERADMIN"]} />}>
+                      <Route path="/superadmin" element={<SuperAdminDashboardPage />} />
+                      <Route path="/superadmin/users" element={<SuperAdminUsersPage />} />
+                      <Route path="/superadmin/admins" element={<SuperAdminAdminsPage />} />
+                      <Route path="/superadmin/problems" element={<SuperAdminProblemsPage />} />
+                      <Route path="/superadmin/proposals" element={<SuperAdminProposalsPage />} />
+                      <Route path="/superadmin/mines" element={<SuperAdminMinesPage />} />
+                      <Route path="/superadmin/waste" element={<SuperAdminWastePage />} />
                     </Route>
                   </Route>
                 </Route>

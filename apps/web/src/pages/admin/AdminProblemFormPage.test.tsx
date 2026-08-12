@@ -2,12 +2,12 @@ import { describe, it, expect } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test/test-utils";
-import CompanyProblemFormPage from "./CompanyProblemFormPage";
+import AdminProblemFormPage from "./AdminProblemFormPage";
 
-describe("CompanyProblemFormPage", () => {
+describe("AdminProblemFormPage", () => {
   it("shows a validation error when the title is shorter than 10 characters", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CompanyProblemFormPage />);
+    renderWithProviders(<AdminProblemFormPage />);
 
     await user.type(screen.getByLabelText(/muammo sarlavhasi/i), "qisqa");
     await user.type(screen.getByLabelText(/muammo tavsifi/i), "x".repeat(60));
@@ -18,7 +18,7 @@ describe("CompanyProblemFormPage", () => {
 
   it("hides the budget amount field when Kelishilgan holda is selected", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<CompanyProblemFormPage />);
+    renderWithProviders(<AdminProblemFormPage />);
 
     expect(screen.getByLabelText(/budjet miqdori/i)).toBeInTheDocument();
 

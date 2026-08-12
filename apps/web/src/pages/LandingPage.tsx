@@ -25,8 +25,7 @@ export default function LandingPage() {
     target?.scrollIntoView({ behavior: "smooth" });
   }, [location.hash]);
 
-  const primaryHref =
-    user?.role === "COMPANY" ? "/app/company/problems/new" : user?.role === "SCIENTIST" ? "/problems" : "/register?role=COMPANY";
+  const primaryHref = user?.role === "ADMIN" ? "/app/admin/problems/new" : user?.role === "USER" ? "/problems" : "/register";
 
   return (
     <div>
@@ -57,6 +56,14 @@ export default function LandingPage() {
                 Muammolarni ko'rish
               </Button>
             </div>
+            <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-300">
+              <Link to="/mines" className="underline-offset-4 hover:underline">
+                Konlar katalogi →
+              </Link>
+              <Link to="/waste" className="underline-offset-4 hover:underline">
+                Chiqindi e'lonlari →
+              </Link>
+            </div>
           </motion.div>
 
           <motion.div
@@ -86,8 +93,8 @@ export default function LandingPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatCard label="Ochiq muammolar" value={stats ? formatNumber(stats.openProblems) : "—"} />
           <StatCard label="Tanlangan takliflar" value={stats ? formatNumber(stats.matchedProblems) : "—"} />
-          <StatCard label="Korxonalar" value={stats ? formatNumber(stats.totalCompanies) : "—"} />
-          <StatCard label="Olimlar" value={stats ? formatNumber(stats.totalScientists) : "—"} />
+          <StatCard label="Firmalar" value={stats ? formatNumber(stats.totalAdmins) : "—"} />
+          <StatCard label="Foydalanuvchilar" value={stats ? formatNumber(stats.totalUsers) : "—"} />
         </div>
       </section>
 
@@ -187,11 +194,11 @@ export default function LandingPage() {
         <div className="mx-auto max-w-content px-4 text-center">
           <h2 className="text-2xl font-semibold sm:text-3xl">Muammoingizga ilmiy yechim topishga tayyormisiz?</h2>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Button size="lg" asLink to="/register?role=COMPANY">
-              Muammo joylashtirish
+            <Button size="lg" asLink to="/register">
+              Ro'yxatdan o'tish
             </Button>
-            <Button size="lg" variant="outlineOnDark" asLink to="/register?role=SCIENTIST">
-              Olim sifatida qo'shilish
+            <Button size="lg" variant="outlineOnDark" asLink to="/problems">
+              Muammolarni ko'rish
             </Button>
           </div>
         </div>

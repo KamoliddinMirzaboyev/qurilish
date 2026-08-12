@@ -12,8 +12,8 @@ import { notify } from "@/components/ui/toast";
 
 export default function ProfilePage() {
   const { user, setUser } = useAuth();
-  const isCompany = user?.role === "COMPANY";
-  const isScientist = user?.role === "SCIENTIST";
+  const isAdmin = user?.role === "ADMIN";
+  const isUser = user?.role === "USER";
 
   const profileForm = useForm<UpdateProfileInput>({
     resolver: zodResolver(updateProfileSchema),
@@ -73,7 +73,7 @@ export default function ProfilePage() {
         <h2 className="font-semibold text-brand-dark">Shaxsiy ma'lumotlar</h2>
         <form onSubmit={profileForm.handleSubmit(onSaveProfile)} className="flex flex-col gap-4">
           <FormField
-            label={isCompany ? "Korxona nomi" : isScientist ? "F.I.Sh." : "Ism"}
+            label={isAdmin ? "Firma nomi" : isUser ? "F.I.Sh." : "Ism"}
             required
             error={profileForm.formState.errors.name?.message}
             htmlFor="name"
@@ -95,7 +95,7 @@ export default function ProfilePage() {
             <PhoneInput id="phone" {...profileForm.register("phone")} />
           </FormField>
 
-          {isScientist && (
+          {isUser && (
             <>
               <FormField label="Mutaxassislik" error={profileForm.formState.errors.specialization?.message} htmlFor="specialization">
                 <Input id="specialization" {...profileForm.register("specialization")} />

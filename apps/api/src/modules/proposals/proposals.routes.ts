@@ -2,7 +2,7 @@ import { Router } from "express";
 import path from "node:path";
 import fs from "node:fs/promises";
 import type { Prisma } from "@prisma/client";
-import { createProposalSchema, updateProposalSchema, expertReviewSchema, paginationQuerySchema } from "@buildscience/shared";
+import { createProposalSchema, updateProposalSchema, paginationQuerySchema } from "@buildscience/shared";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { validateQuery } from "../../middleware/validate.js";
 import { handleProposalUpload, uploadRoot } from "../../middleware/upload.js";
@@ -27,7 +27,7 @@ export const proposalsRouter = Router();
 proposalsRouter.get(
   "/company/proposals/recent",
   requireAuth,
-  requireRole("COMPANY"),
+  requireRole("ADMIN"),
   asyncHandler(async (req, res) => {
     const proposals = await prisma.proposal.findMany({
       where: { deletedAt: null, problem: { companyId: req.user!.id, deletedAt: null } },
@@ -62,7 +62,7 @@ proposalsRouter.get(
 proposalsRouter.get(
   "/company/proposals",
   requireAuth,
-  requireRole("COMPANY"),
+  requireRole("ADMIN"),
   validateQuery(paginationQuerySchema),
   asyncHandler(async (req, res) => {
     const { page, pageSize } = paginationQuerySchema.parse(req.query);
@@ -140,7 +140,7 @@ async function removeFileSafely(storedName: string | null) {
 proposalsRouter.post(
   "/problems/:problemId/proposals",
   requireAuth,
-  requireRole("SCIENTIST"),
+  requireRole("USER"),
   handleProposalUpload,
   asyncHandler(async (req, res) => {
     const parsed = parseProposalBody(req.body);
@@ -214,7 +214,7 @@ proposalsRouter.get(
   asyncHandler(async (req, res) => {
     const problem = await prisma.problem.findFirst({ where: { id: req.params.problemId, deletedAt: null } });
     if (!problem) throw AppError.notFound("Muammo topilmadi.");
-    if (req.user!.role !== "ADMIN" && problem.companyId !== req.user!.id) {
+    if (req.user!.role !== "SUPERADMIN" && problem.companyId !== req.user!.id) {
       throw AppError.forbidden();
     }
 
@@ -241,7 +241,7 @@ proposalsRouter.get(
 proposalsRouter.get(
   "/proposals/mine",
   requireAuth,
-  requireRole("SCIENTIST"),
+  requireRole("USER"),
   asyncHandler(async (req, res) => {
     const proposals = await prisma.proposal.findMany({
       where: { scientistId: req.user!.id, deletedAt: null },
@@ -261,7 +261,7 @@ async function loadProposalWithAccess(proposalId: string, userId: string, role: 
 
   const isOwnerScientist = proposal.scientistId === userId;
   const isOwnerCompany = proposal.problem?.companyId === userId;
-  const isAdmin = role === "ADMIN";
+  const isAdmin = role === "SUPERADMIN";
   if (!isOwnerScientist && !isOwnerCompany && !isAdmin) throw AppError.forbidden();
 
   return proposal;
@@ -322,7 +322,7 @@ proposalsRouter.get(
 proposalsRouter.patch(
   "/proposals/:proposalId",
   requireAuth,
-  requireRole("SCIENTIST"),
+  requireRole("USER"),
   handleProposalUpload,
   asyncHandler(async (req, res) => {
     const proposal = await prisma.proposal.findFirst({
@@ -404,12 +404,12 @@ proposalsRouter.patch(
 proposalsRouter.post(
   "/proposals/:proposalId/withdraw",
   requireAuth,
-  requireRole("SCIENTIST"),
+  requireRole("USER"),
   asyncHandler(async (req, res) => {
     const proposal = await prisma.proposal.findFirst({ where: { id: req.params.proposalId, deletedAt: null } });
     if (!proposal) throw AppError.notFound("Taklif topilmadi.");
     if (proposal.scientistId !== req.user!.id) throw AppError.forbidden();
-    if (proposal.status !== "PENDING" && proposal.status !== "EXPERT_APPROVED") throw AppError.conflict("Bu bosqichdagi taklifni bekor qilib bo'lmaydi.");
+    if (proposal.status !== "PENDING") throw AppError.conflict("Bu bosqichdagi taklifni bekor qilib bo'lmaydi.");
 
     const updated = await prisma.proposal.update({
       where: { id: proposal.id },
@@ -438,7 +438,7 @@ proposalsRouter.post(
 proposalsRouter.post(
   "/proposals/:proposalId/accept",
   requireAuth,
-  requireRole("COMPANY"),
+  requireRole("ADMIN"),
   asyncHandler(async (req, res) => {
     const proposalId = req.params.proposalId;
 
@@ -449,7 +449,7 @@ proposalsRouter.post(
       const problem = await tx.problem.findFirst({ where: { id: proposal.problemId, deletedAt: null } });
       if (!problem) throw AppError.notFound("Muammo topilmadi.");
       if (problem.companyId !== req.user!.id) throw AppError.forbidden();
-      if (proposal.status !== "EXPERT_APPROVED") throw AppError.conflict("Faqat ekspertlar tomonidan ma'qullangan takliflarni qabul qilish mumkin.");
+      if (proposal.status !== "PENDING") throw AppError.conflict("Faqat kutilayotgan takliflarni qabul qilish mumkin.");
 
       const scientist = await tx.user.findFirst({
         where: { id: proposal.scientistId, status: "ACTIVE", deletedAt: null },
@@ -523,84 +523,5 @@ proposalsRouter.get(
         res.status(404).json({ success: false, message: "Fayl topilmadi." });
       }
     });
-  })
-);
-
-/**
- * @openapi
- * /proposals/expert:
- *   get:
- *     tags: [Proposals]
- *     summary: Ekspertiza kutilayotgan takliflar ro'yxati (EXPERT)
- *     responses:
- *       200:
- *         description: OK
- */
-proposalsRouter.get(
-  "/proposals/expert",
-  requireAuth,
-  requireRole("EXPERT"),
-  asyncHandler(async (req, res) => {
-    const proposals = await prisma.proposal.findMany({
-      where: { status: "PENDING", deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      include: { scientist: true, problem: { include: { company: true } } },
-    });
-    ok(res, { items: proposals.map(toProposalListItem) });
-  })
-);
-
-/**
- * @openapi
- * /proposals/{proposalId}/expert-review:
- *   post:
- *     tags: [Proposals]
- *     summary: Taklifni ekspertizadan o'tkazish (EXPERT)
- *     parameters:
- *       - in: path
- *         name: proposalId
- *         required: true
- *         schema: { type: string }
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [status]
- *             properties:
- *               status: { type: string, enum: [APPROVE, REJECT] }
- *     responses:
- *       200:
- *         description: OK
- */
-proposalsRouter.post(
-  "/proposals/:proposalId/expert-review",
-  requireAuth,
-  requireRole("EXPERT"),
-  asyncHandler(async (req, res) => {
-    const parsed = expertReviewSchema.safeParse(req.body);
-    if (!parsed.success) throw AppError.badRequest("Noto'g'ri so'rov.");
-
-    const proposal = await prisma.proposal.findFirst({
-      where: { id: req.params.proposalId, deletedAt: null },
-      include: { problem: true }
-    });
-    if (!proposal) throw AppError.notFound("Taklif topilmadi.");
-    if (proposal.status !== "PENDING") throw AppError.conflict("Faqat kutilayotgan takliflarni baholash mumkin.");
-
-    const newStatus = parsed.data.status === "APPROVE" ? "EXPERT_APPROVED" : "REJECTED";
-    
-    const updated = await prisma.proposal.update({
-      where: { id: proposal.id },
-      data: {
-        status: newStatus,
-        reviewedById: req.user!.id,
-        reviewedAt: new Date(),
-      },
-      include: { scientist: true },
-    });
-
-    ok(res, toProposalListItem(updated));
   })
 );

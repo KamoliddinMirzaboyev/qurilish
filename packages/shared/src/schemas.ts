@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { Role, BudgetType, Category } from "./enums.js";
-import { LIMITS, PHONE_REGEX, PAGINATION } from "./constants.js";
+import { BudgetType, Category } from "./enums.js";
+import { LIMITS, PHONE_REGEX, PAGINATION, MINE_LIMITS, WASTE_LIMITS } from "./constants.js";
 
 const name = z
   .string({ required_error: "Ismni kiriting." })
@@ -38,13 +38,8 @@ const bio = z
   .optional()
   .or(z.literal(""));
 
-const roleEnum = z.enum([Role.COMPANY, Role.SCIENTIST, Role.EXPERT], {
-  errorMap: () => ({ message: "Rolni tanlang: Korxona, Olim yoki Ekspert." }),
-});
-
 export const registerSchema = z
   .object({
-    role: roleEnum,
     name,
     email,
     phone,
@@ -59,8 +54,21 @@ export const registerSchema = z
   });
 export type RegisterInput = z.infer<typeof registerSchema>;
 
+export const createAdminSchema = z.object({
+  name,
+  email,
+  phone,
+  password,
+  organization,
+});
+export type CreateAdminInput = z.infer<typeof createAdminSchema>;
+
 export const loginSchema = z.object({
-  email: z.string({ required_error: "Email yoki loginingizni kiriting." }).trim().toLowerCase(),
+  email: z
+    .string({ required_error: "Email yoki loginingizni kiriting." })
+    .trim()
+    .min(1, "Email yoki loginingizni kiriting.")
+    .toLowerCase(),
   password: z.string({ required_error: "Parolni kiriting." }).min(1, "Parolni kiriting."),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -198,7 +206,62 @@ export const paginationQuerySchema = z.object({
   pageSize: z.coerce.number({ invalid_type_error: "Sahifa hajmi noto'g'ri." }).int("Sahifa hajmi butun son bo'lishi kerak.").min(1, "Sahifa hajmi kamida 1 bo'lishi kerak.").max(PAGINATION.MAX_PAGE_SIZE, `Sahifa hajmi ${PAGINATION.MAX_PAGE_SIZE} dan oshmasligi kerak.`).default(20),
 });
 
-export const expertReviewSchema = z.object({
-  status: z.enum(["APPROVE", "REJECT"], { errorMap: () => ({ message: "Noto'g'ri holat." }) }),
+export const mineSchema = z.object({
+  name: z
+    .string({ required_error: "Kon nomini kiriting." })
+    .trim()
+    .min(MINE_LIMITS.NAME_MIN, `Nom kamida ${MINE_LIMITS.NAME_MIN} ta belgidan iborat bo'lishi kerak.`)
+    .max(MINE_LIMITS.NAME_MAX, `Nom ${MINE_LIMITS.NAME_MAX} ta belgidan oshmasligi kerak.`),
+  description: z
+    .string({ invalid_type_error: "Tavsif matn bo'lishi kerak." })
+    .trim()
+    .max(MINE_LIMITS.DESCRIPTION_MAX, `Tavsif ${MINE_LIMITS.DESCRIPTION_MAX} ta belgidan oshmasligi kerak.`)
+    .optional()
+    .or(z.literal("")),
+  location: z
+    .string({ required_error: "Joylashuvni kiriting." })
+    .trim()
+    .min(MINE_LIMITS.LOCATION_MIN, `Joylashuv kamida ${MINE_LIMITS.LOCATION_MIN} ta belgidan iborat bo'lishi kerak.`)
+    .max(MINE_LIMITS.LOCATION_MAX, `Joylashuv ${MINE_LIMITS.LOCATION_MAX} ta belgidan oshmasligi kerak.`),
+  rawMaterialType: z
+    .string({ required_error: "Xomashyo turini kiriting." })
+    .trim()
+    .min(MINE_LIMITS.RAW_MATERIAL_MIN, `Xomashyo turi kamida ${MINE_LIMITS.RAW_MATERIAL_MIN} ta belgidan iborat bo'lishi kerak.`)
+    .max(MINE_LIMITS.RAW_MATERIAL_MAX, `Xomashyo turi ${MINE_LIMITS.RAW_MATERIAL_MAX} ta belgidan oshmasligi kerak.`),
+  volume: z
+    .string({ required_error: "Hajmni kiriting." })
+    .trim()
+    .min(MINE_LIMITS.VOLUME_MIN, "Hajmni kiriting.")
+    .max(MINE_LIMITS.VOLUME_MAX, `Hajm ${MINE_LIMITS.VOLUME_MAX} ta belgidan oshmasligi kerak.`),
 });
-export type ExpertReviewInput = z.infer<typeof expertReviewSchema>;
+export type MineInput = z.infer<typeof mineSchema>;
+
+export const wasteSchema = z.object({
+  factoryName: z
+    .string({ required_error: "Zavod nomini kiriting." })
+    .trim()
+    .min(WASTE_LIMITS.FACTORY_NAME_MIN, `Zavod nomi kamida ${WASTE_LIMITS.FACTORY_NAME_MIN} ta belgidan iborat bo'lishi kerak.`)
+    .max(WASTE_LIMITS.FACTORY_NAME_MAX, `Zavod nomi ${WASTE_LIMITS.FACTORY_NAME_MAX} ta belgidan oshmasligi kerak.`),
+  composition: z
+    .string({ required_error: "Tarkibini kiriting." })
+    .trim()
+    .min(WASTE_LIMITS.COMPOSITION_MIN, `Tarkib kamida ${WASTE_LIMITS.COMPOSITION_MIN} ta belgidan iborat bo'lishi kerak.`)
+    .max(WASTE_LIMITS.COMPOSITION_MAX, `Tarkib ${WASTE_LIMITS.COMPOSITION_MAX} ta belgidan oshmasligi kerak.`),
+  volume: z
+    .string({ required_error: "Hajmni kiriting." })
+    .trim()
+    .min(WASTE_LIMITS.VOLUME_MIN, "Hajmni kiriting.")
+    .max(WASTE_LIMITS.VOLUME_MAX, `Hajm ${WASTE_LIMITS.VOLUME_MAX} ta belgidan oshmasligi kerak.`),
+  annualVolume: z
+    .string({ required_error: "Yillik hajmni kiriting." })
+    .trim()
+    .min(WASTE_LIMITS.ANNUAL_VOLUME_MIN, "Yillik hajmni kiriting.")
+    .max(WASTE_LIMITS.ANNUAL_VOLUME_MAX, `Yillik hajm ${WASTE_LIMITS.ANNUAL_VOLUME_MAX} ta belgidan oshmasligi kerak.`),
+  description: z
+    .string({ invalid_type_error: "Tavsif matn bo'lishi kerak." })
+    .trim()
+    .max(WASTE_LIMITS.DESCRIPTION_MAX, `Tavsif ${WASTE_LIMITS.DESCRIPTION_MAX} ta belgidan oshmasligi kerak.`)
+    .optional()
+    .or(z.literal("")),
+});
+export type WasteInput = z.infer<typeof wasteSchema>;

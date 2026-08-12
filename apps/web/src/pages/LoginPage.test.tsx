@@ -16,6 +16,6 @@ describe("LoginPage", () => {
     await user.type(screen.getByLabelText(/^parol\b/i), "somepassword");
     await user.click(screen.getByRole("button", { name: /^kirish$/i }));
 
-    expect(await screen.findByText(/to'g'ri email manzilini kiriting|email kiriting/i)).toBeInTheDocument();
+    expect(await screen.findByText(/email yoki loginingizni kiriting/i)).toBeInTheDocument();
   });
 });

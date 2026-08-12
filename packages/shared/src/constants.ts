@@ -26,4 +26,35 @@ export const UPLOAD = {
   ALLOWED_EXTENSIONS: [".pdf", ".jpg", ".jpeg", ".png"],
 } as const;
 
+export const GALLERY_UPLOAD = {
+  MAX_SIZE_MB: 10,
+  MAX_IMAGES: 6,
+  ALLOWED_MIME_TYPES: ["image/jpeg", "image/jpg", "image/png"],
+  ALLOWED_EXTENSIONS: [".jpg", ".jpeg", ".png"],
+} as const;
+
+export const MINE_LIMITS = {
+  NAME_MIN: 3,
+  NAME_MAX: 160,
+  LOCATION_MIN: 3,
+  LOCATION_MAX: 200,
+  RAW_MATERIAL_MIN: 2,
+  RAW_MATERIAL_MAX: 120,
+  VOLUME_MIN: 1,
+  VOLUME_MAX: 120,
+  DESCRIPTION_MAX: 3000,
+} as const;
+
+export const WASTE_LIMITS = {
+  FACTORY_NAME_MIN: 2,
+  FACTORY_NAME_MAX: 160,
+  COMPOSITION_MIN: 3,
+  COMPOSITION_MAX: 3000,
+  VOLUME_MIN: 1,
+  VOLUME_MAX: 120,
+  ANNUAL_VOLUME_MIN: 1,
+  ANNUAL_VOLUME_MAX: 120,
+  DESCRIPTION_MAX: 3000,
+} as const;
+
 export const PHONE_REGEX = /^\+998\d{9}$/;

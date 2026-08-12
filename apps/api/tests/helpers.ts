@@ -1,27 +1,35 @@
 import request from "supertest";
+import bcrypt from "bcrypt";
+import { PrismaClient } from "@prisma/client";
 import { app } from "../src/app.js";
+
+const prisma = new PrismaClient();
 
 export function agent() {
   return request.agent(app);
 }
 
+/** ADMIN (firma) akkauntlari endi faqat SUPERADMIN tomonidan yaratiladi — testda to'g'ridan-to'g'ri DB orqali yaratib, login qilamiz. */
 export async function registerCompany(email = "company@test.local") {
-  const a = agent();
-  const res = await a.post("/api/auth/register").send({
-    role: "COMPANY",
-    name: "Test Qurilish MChJ",
-    email,
-    phone: "+998901234567",
-    password: "Password123",
-    passwordConfirm: "Password123",
+  const passwordHash = await bcrypt.hash("Password123", 4);
+  await prisma.user.create({
+    data: {
+      role: "ADMIN",
+      name: "Test Qurilish MChJ",
+      email,
+      phone: "+998901234567",
+      passwordHash,
+      status: "ACTIVE",
+    },
   });
+  const a = agent();
+  const res = await a.post("/api/auth/login").send({ email, password: "Password123" });
   return { agent: a, res };
 }
 
 export async function registerScientist(email = "scientist@test.local") {
   const a = agent();
   const res = await a.post("/api/auth/register").send({
-    role: "SCIENTIST",
     name: "Test Olim",
     email,
     phone: "+998907654321",
@@ -30,6 +38,23 @@ export async function registerScientist(email = "scientist@test.local") {
     specialization: "Beton",
     organization: "Test Universitet",
   });
+  return { agent: a, res };
+}
+
+export async function registerSuperadmin(email = "superadmin@test.local") {
+  const passwordHash = await bcrypt.hash("Password123", 4);
+  await prisma.user.create({
+    data: {
+      role: "SUPERADMIN",
+      name: "Test Hokimiyat",
+      email,
+      phone: "+998900000001",
+      passwordHash,
+      status: "ACTIVE",
+    },
+  });
+  const a = agent();
+  const res = await a.post("/api/auth/login").send({ email, password: "Password123" });
   return { agent: a, res };
 }
 

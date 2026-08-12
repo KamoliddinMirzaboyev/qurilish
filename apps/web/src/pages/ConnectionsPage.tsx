@@ -22,7 +22,7 @@ export default function ConnectionsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {items.map((item) =>
-            user?.role === "COMPANY" ? (
+            user?.role === "ADMIN" ? (
               <ConnectionCard
                 key={(item as ConnectionCompanyView).proposalId}
                 problemId={item.problemId}

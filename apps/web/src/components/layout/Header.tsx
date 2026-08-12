@@ -12,6 +12,8 @@ import { dashboardPathForRole } from "@/routes/paths";
 const navLinks = [
   { label: "Bosh sahifa", to: "/" },
   { label: "Muammolar", to: "/problems" },
+  { label: "Konlar", to: "/mines" },
+  { label: "Chiqindi", to: "/waste" },
   { label: "Qanday ishlaydi", to: "/#how-it-works" },
   { label: "Platforma haqida", to: "/#boundaries" },
 ];

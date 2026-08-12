@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Prisma } from "@prisma/client";
-import { adminUserStatusSchema, paginationQuerySchema } from "@buildscience/shared";
+import { adminUserStatusSchema, createAdminSchema, paginationQuerySchema, type AdminStats } from "@buildscience/shared";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { validateBody, validateQuery } from "../../middleware/validate.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
@@ -8,12 +8,16 @@ import { ok, paginate } from "../../utils/response.js";
 import { AppError } from "../../utils/AppError.js";
 import { prisma } from "../../services/prisma.js";
 import { toAuthUser } from "../../utils/serializers.js";
+import { hashPassword } from "../../utils/password.js";
+import { normalizePhone } from "../../utils/phone.js";
 import { toProblemListItem } from "../problems/problems.serializers.js";
 import { toProposalListItem } from "../proposals/proposals.serializers.js";
+import { toMineListItem } from "../mines/mines.serializers.js";
+import { toWasteListItem } from "../waste/waste.serializers.js";
 
 export const adminRouter = Router();
 
-adminRouter.use(requireAuth, requireRole("ADMIN"));
+adminRouter.use(requireAuth, requireRole("SUPERADMIN"));
 
 function sortOrder(req: { query: Record<string, unknown> }): "asc" | "desc" {
   return req.query.sort === "oldest" ? "asc" : "desc";
@@ -24,7 +28,7 @@ function sortOrder(req: { query: Record<string, unknown> }): "asc" | "desc" {
  * /admin/stats:
  *   get:
  *     tags: [Admin]
- *     summary: Umumiy tizim statistikasi (ADMIN)
+ *     summary: Umumiy tizim statistikasi (SUPERADMIN)
  *     responses:
  *       200:
  *         description: OK
@@ -32,26 +36,67 @@ function sortOrder(req: { query: Record<string, unknown> }): "asc" | "desc" {
 adminRouter.get(
   "/stats",
   asyncHandler(async (_req, res) => {
-    const [totalUsers, totalCompanies, totalScientists, openProblems, totalProposals, acceptedProposals, blockedUsers] =
+    const [totalUsers, totalAdmins, openProblems, totalProposals, acceptedProposals, blockedUsers, totalMines, totalWaste] =
       await Promise.all([
-        prisma.user.count({ where: { deletedAt: null } }),
-        prisma.user.count({ where: { role: "COMPANY", deletedAt: null } }),
-        prisma.user.count({ where: { role: "SCIENTIST", deletedAt: null } }),
+        prisma.user.count({ where: { role: "USER", deletedAt: null } }),
+        prisma.user.count({ where: { role: "ADMIN", deletedAt: null } }),
         prisma.problem.count({ where: { status: "OPEN", deletedAt: null } }),
         prisma.proposal.count({ where: { deletedAt: null } }),
         prisma.proposal.count({ where: { status: "ACCEPTED", deletedAt: null } }),
         prisma.user.count({ where: { status: "BLOCKED", deletedAt: null } }),
+        prisma.mine.count({ where: { deletedAt: null } }),
+        prisma.waste.count({ where: { deletedAt: null } }),
       ]);
 
-    ok(res, {
-      totalUsers,
-      totalCompanies,
-      totalScientists,
-      openProblems,
-      totalProposals,
-      acceptedProposals,
-      blockedUsers,
+    const stats: AdminStats = { totalUsers, totalAdmins, openProblems, totalProposals, acceptedProposals, blockedUsers, totalMines, totalWaste };
+    ok(res, stats);
+  })
+);
+
+/**
+ * @openapi
+ * /admin/admins:
+ *   post:
+ *     tags: [Admin]
+ *     summary: Yangi ADMIN (firma) akkaunt yaratish (SUPERADMIN)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, phone, password]
+ *             properties:
+ *               name: { type: string }
+ *               email: { type: string }
+ *               phone: { type: string }
+ *               password: { type: string }
+ *               organization: { type: string }
+ *     responses:
+ *       201:
+ *         description: Yaratildi
+ */
+adminRouter.post(
+  "/admins",
+  validateBody(createAdminSchema),
+  asyncHandler(async (req, res) => {
+    const email = req.body.email.toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw AppError.unprocessable("Bu email allaqachon ro'yxatdan o'tgan.", { email: ["Bu email allaqachon ro'yxatdan o'tgan."] });
+    }
+    const created = await prisma.user.create({
+      data: {
+        role: "ADMIN",
+        name: req.body.name,
+        email,
+        phone: normalizePhone(req.body.phone),
+        passwordHash: await hashPassword(req.body.password),
+        organization: req.body.organization || null,
+        status: "ACTIVE",
+      },
     });
+    ok(res, toAuthUser(created), 201);
   })
 );
 
@@ -341,6 +386,116 @@ adminRouter.delete(
     const proposal = await prisma.proposal.findFirst({ where: { id: req.params.proposalId, deletedAt: null } });
     if (!proposal) throw AppError.notFound("Taklif topilmadi.");
     await prisma.proposal.update({ where: { id: proposal.id }, data: { deletedAt: new Date() } });
+    res.status(204).send();
+  })
+);
+
+/**
+ * @openapi
+ * /admin/mines:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Barcha konlar ro'yxati (SUPERADMIN)
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+adminRouter.get(
+  "/mines",
+  validateQuery(paginationQuerySchema),
+  asyncHandler(async (req, res) => {
+    const { search, page, pageSize } = paginationQuerySchema.parse(req.query);
+    const where: Prisma.MineWhereInput = { deletedAt: null, ...(search ? { name: { contains: search, mode: "insensitive" } } : {}) };
+    const [mines, total] = await Promise.all([
+      prisma.mine.findMany({
+        where,
+        orderBy: { createdAt: sortOrder(req) },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: { admin: true, images: { orderBy: { sortOrder: "asc" } } },
+      }),
+      prisma.mine.count({ where }),
+    ]);
+    ok(res, paginate(mines.map(toMineListItem), page, pageSize, total));
+  })
+);
+
+/**
+ * @openapi
+ * /admin/mines/{mineId}:
+ *   delete:
+ *     tags: [Admin]
+ *     summary: Konni o'chirish (soft delete, SUPERADMIN)
+ *     parameters:
+ *       - in: path
+ *         name: mineId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       204:
+ *         description: O'chirildi
+ */
+adminRouter.delete(
+  "/mines/:mineId",
+  asyncHandler(async (req, res) => {
+    const mine = await prisma.mine.findFirst({ where: { id: req.params.mineId, deletedAt: null } });
+    if (!mine) throw AppError.notFound("Kon topilmadi.");
+    await prisma.mine.update({ where: { id: mine.id }, data: { deletedAt: new Date() } });
+    res.status(204).send();
+  })
+);
+
+/**
+ * @openapi
+ * /admin/waste:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Barcha chiqindi e'lonlari ro'yxati (SUPERADMIN)
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+adminRouter.get(
+  "/waste",
+  validateQuery(paginationQuerySchema),
+  asyncHandler(async (req, res) => {
+    const { search, page, pageSize } = paginationQuerySchema.parse(req.query);
+    const where: Prisma.WasteWhereInput = { deletedAt: null, ...(search ? { factoryName: { contains: search, mode: "insensitive" } } : {}) };
+    const [waste, total] = await Promise.all([
+      prisma.waste.findMany({
+        where,
+        orderBy: { createdAt: sortOrder(req) },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: { admin: true, images: { orderBy: { sortOrder: "asc" } } },
+      }),
+      prisma.waste.count({ where }),
+    ]);
+    ok(res, paginate(waste.map(toWasteListItem), page, pageSize, total));
+  })
+);
+
+/**
+ * @openapi
+ * /admin/waste/{wasteId}:
+ *   delete:
+ *     tags: [Admin]
+ *     summary: Chiqindi e'lonini o'chirish (soft delete, SUPERADMIN)
+ *     parameters:
+ *       - in: path
+ *         name: wasteId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       204:
+ *         description: O'chirildi
+ */
+adminRouter.delete(
+  "/waste/:wasteId",
+  asyncHandler(async (req, res) => {
+    const waste = await prisma.waste.findFirst({ where: { id: req.params.wasteId, deletedAt: null } });
+    if (!waste) throw AppError.notFound("Chiqindi e'loni topilmadi.");
+    await prisma.waste.update({ where: { id: waste.id }, data: { deletedAt: new Date() } });
     res.status(204).send();
   })
 );

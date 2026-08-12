@@ -15,30 +15,12 @@ import { env } from "../../config/env.js";
 
 export const authRouter = Router();
 
-authRouter.get("/init-admin", asyncHandler(async (req, res) => {
-  const adminEmail = "superadmin";
-  const adminPassword = await hashPassword("admin1234");
-  await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: { passwordHash: adminPassword },
-    create: {
-      role: "ADMIN",
-      name: "Super Admin",
-      email: adminEmail,
-      phone: "+998900000000",
-      passwordHash: adminPassword,
-      status: "ACTIVE",
-    },
-  });
-  ok(res, { message: "Admin 'superadmin' initialized." });
-}));
-
 /**
  * @openapi
  * /auth/register:
  *   post:
  *     tags: [Auth]
- *     summary: Ro'yxatdan o'tish (COMPANY yoki SCIENTIST)
+ *     summary: Ro'yxatdan o'tish (har doim USER roli bilan yaratiladi)
  *     security: []
  *     requestBody:
  *       required: true
@@ -46,9 +28,8 @@ authRouter.get("/init-admin", asyncHandler(async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
- *             required: [role, name, email, phone, password, passwordConfirm]
+ *             required: [name, email, phone, password, passwordConfirm]
  *             properties:
- *               role: { type: string, enum: [COMPANY, SCIENTIST] }
  *               name: { type: string }
  *               email: { type: string }
  *               phone: { type: string }

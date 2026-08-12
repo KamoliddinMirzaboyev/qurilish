@@ -8,24 +8,19 @@ vi.mock("@/features/auth/AuthContext", () => ({
 }));
 
 describe("RegisterPage", () => {
-  it("offers only Korxona and Olim role cards, never Administrator", () => {
+  it("has no role selector — registration always creates a USER", () => {
     renderWithProviders(<RegisterPage />);
 
-    expect(screen.getByRole("button", { name: /korxona/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /olim/i })).toBeInTheDocument();
-    expect(screen.queryByText(/administrator/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /korxona/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /ekspert/i })).not.toBeInTheDocument();
   });
 
-  it("shows scientist-only fields after selecting Olim", async () => {
-    const { default: userEvent } = await import("@testing-library/user-event");
-    const user = userEvent.setup();
+  it("always shows specialization and organization fields", () => {
     renderWithProviders(<RegisterPage />);
 
-    expect(screen.queryByLabelText(/mutaxassislik/i)).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /olim/i }));
-
     expect(screen.getByLabelText(/mutaxassislik/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/OTM yoki tashkilot/i)).toBeInTheDocument();
     expect(screen.getByLabelText("F.I.Sh.", { exact: false })).toBeInTheDocument();
   });
 });

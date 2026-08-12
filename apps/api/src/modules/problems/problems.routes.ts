@@ -111,7 +111,7 @@ problemsRouter.get(
 problemsRouter.get(
   "/company/problems",
   requireAuth,
-  requireRole("COMPANY"),
+  requireRole("ADMIN"),
   validateQuery(paginationQuerySchema),
   asyncHandler(async (req, res) => {
     const { page, pageSize } = paginationQuerySchema.parse(req.query);
@@ -152,7 +152,7 @@ problemsRouter.get(
 problemsRouter.get(
   "/company/stats",
   requireAuth,
-  requireRole("COMPANY"),
+  requireRole("ADMIN"),
   asyncHandler(async (req, res) => {
     const companyId = req.user!.id;
     const [openProblems, matchedProblems, closedProblems, totalProposals] = await Promise.all([
@@ -176,7 +176,7 @@ async function loadVisibleProblem(problemId: string, userId?: string, userRole?:
   if (problem.status === "OPEN") return problem;
 
   const isOwner = userId === problem.companyId;
-  const isAdmin = userRole === "ADMIN";
+  const isAdmin = userRole === "SUPERADMIN";
   if (isOwner || isAdmin) return problem;
 
   if (userId) {
@@ -240,7 +240,7 @@ problemsRouter.get(
 problemsRouter.post(
   "/problems",
   requireAuth,
-  requireRole("COMPANY"),
+  requireRole("ADMIN"),
   validateBody(createProblemSchema),
   asyncHandler(async (req, res) => {
     const problem = await prisma.problem.create({
@@ -297,7 +297,7 @@ async function loadOwnedOpenProblem(problemId: string, companyId: string) {
 problemsRouter.patch(
   "/problems/:problemId",
   requireAuth,
-  requireRole("COMPANY"),
+  requireRole("ADMIN"),
   validateBody(updateProblemSchema),
   asyncHandler(async (req, res) => {
     const existing = await loadOwnedOpenProblem(req.params.problemId!, req.user!.id);
@@ -337,7 +337,7 @@ problemsRouter.patch(
 problemsRouter.delete(
   "/problems/:problemId",
   requireAuth,
-  requireRole("COMPANY"),
+  requireRole("ADMIN"),
   asyncHandler(async (req, res) => {
     const existing = await loadOwnedOpenProblem(req.params.problemId!, req.user!.id);
     const proposalCount = await prisma.proposal.count({ where: { problemId: existing.id, deletedAt: null } });
@@ -367,7 +367,7 @@ problemsRouter.delete(
 problemsRouter.post(
   "/problems/:problemId/close",
   requireAuth,
-  requireRole("COMPANY"),
+  requireRole("ADMIN"),
   asyncHandler(async (req, res) => {
     const existing = await loadOwnedOpenProblem(req.params.problemId!, req.user!.id);
     if (existing.status !== "OPEN") {

@@ -21,7 +21,7 @@ export default function ProblemDetailPage() {
   const { pathname } = useLocation();
   const problemsBase = pathname.startsWith("/app") ? "/app/problems" : "/problems";
   const { data: problem, isLoading, isError, refetch } = useProblem(problemId);
-  const { data: myProposals } = useMyProposals(user?.role === "SCIENTIST");
+  const { data: myProposals } = useMyProposals(user?.role === "USER");
   const closeMutation = useCloseProblem();
   const [proposalModalOpen, setProposalModalOpen] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
@@ -43,7 +43,7 @@ export default function ProblemDetailPage() {
     );
   }
 
-  const isOwnerCompany = user?.role === "COMPANY" && user.id === problem.companyId;
+  const isOwnerAdmin = user?.role === "ADMIN" && user.id === problem.companyId;
   const myExistingProposal = myProposals?.items.find((p) => p.problemId === problem.id);
 
   async function handleClose() {
@@ -95,25 +95,25 @@ export default function ProblemDetailPage() {
             </Button>
           )}
 
-          {user?.role === "SCIENTIST" && problem.status === "OPEN" && !myExistingProposal && (
+          {user?.role === "USER" && problem.status === "OPEN" && !myExistingProposal && (
             <Button onClick={() => setProposalModalOpen(true)}>Taklif yuborish</Button>
           )}
 
-          {user?.role === "SCIENTIST" && myExistingProposal && (
+          {user?.role === "USER" && myExistingProposal && (
             <div className="rounded-xl bg-brand-primary/10 p-4 text-sm text-brand-primary">
               Siz bu muammoga taklif yuborgansiz.
-              <Link to="/app/scientist/proposals" className="mt-1 block font-medium underline">
+              <Link to="/app/user/proposals" className="mt-1 block font-medium underline">
                 Taklifimni ko'rish
               </Link>
             </div>
           )}
 
-          {isOwnerCompany && problem.status === "OPEN" && (
+          {isOwnerAdmin && problem.status === "OPEN" && (
             <div className="flex flex-col gap-2">
-              <Button variant="outline" onClick={() => navigate(`/app/company/problems/${problem.id}/edit`)}>
+              <Button variant="outline" onClick={() => navigate(`/app/admin/problems/${problem.id}/edit`)}>
                 <Pencil size={16} /> Tahrirlash
               </Button>
-              <Button variant="outline" onClick={() => navigate(`/app/company/problems/${problem.id}/proposals`)}>
+              <Button variant="outline" onClick={() => navigate(`/app/admin/problems/${problem.id}/proposals`)}>
                 <ListChecks size={16} /> Takliflarni ko'rish
               </Button>
               <Button variant="danger" onClick={() => setCloseDialogOpen(true)}>
@@ -122,7 +122,7 @@ export default function ProblemDetailPage() {
             </div>
           )}
 
-          {isOwnerCompany && problem.status === "MATCHED" && (
+          {isOwnerAdmin && problem.status === "MATCHED" && (
             <Button asLink to="/app/connections">
               Bog'lanishni ko'rish
             </Button>

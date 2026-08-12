@@ -1,17 +1,29 @@
 # BuildScience
 
-BuildScience — qurilish kompaniyalari va olimlarni bog'laydigan raqamli bozor (MVP). Korxona muammo joylashtiradi,
-olimlar taklif yuboradi, korxona bitta taklifni qabul qiladi va tomonlarning kontakt ma'lumotlari faqat shundan keyin
-ochiladi. Shartnoma, to'lov va loyiha ijrosi platformadan tashqarida amalga oshiriladi.
+BuildScience — qurilish sohasidagi muammolar, xomashyo konlari va ishlab chiqarish chiqindilarini bir joyda
+ko'rsatadigan raqamli platforma (MVP). Firmalar muammo joylashtiradi, foydalanuvchilar taklif yuboradi, firma bitta
+taklifni qabul qiladi va tomonlarning kontakt ma'lumotlari faqat shundan keyin ochiladi. Shartnoma, to'lov va loyiha
+ijrosi platformadan tashqarida amalga oshiriladi.
+
+## Rollar
+
+- **SUPERADMIN** (hokimiyat) — faqat seed orqali yaratiladi. ADMIN (firma) akkauntlarini yaratadi, barcha
+  foydalanuvchi/muammo/taklif/kon/chiqindi ma'lumotlarini moderatsiya qiladi.
+- **ADMIN** (firma) — faqat SUPERADMIN tomonidan yaratiladi, ochiq ro'yxatdan o'tish yo'q. O'z muammolarini, kon va
+  chiqindi e'lonlarini joylashtiradi, kelgan takliflarni qabul/rad etadi.
+- **USER** (oddiy foydalanuvchi — professor, talaba va h.k.) — ochiq ro'yxatdan o'tadigan yagona rol. Muammolarga
+  taklif yuboradi.
+- Ro'yxatdan o'tmagan mehmon ham Muammolar, Konlar va Chiqindi bo'limlarini to'liq ko'ra oladi.
 
 ## Xususiyatlar
 
-- Uch rol: Korxona, Olim, Administrator (admin faqat seed orqali yaratiladi).
 - Muammolar bank: yaratish, tahrirlash, yopish, o'chirish (faqat takliflar bo'lmasa), qidiruv/filtr/saralash.
+- Konlar katalogi: kon nomi, joylashuvi, xomashyo turi, hajmi, rasm galereyasi — hammaga ochiq.
+- Chiqindi e'lonlari: zavod nomi, tarkibi, hajmi/yillik hajmi, rasm galereyasi — hammaga ochiq.
 - Takliflar: yuborish, tahrirlash, bekor qilish, fayl biriktirish (PDF/JPG/PNG, 10 MB).
 - Atomik taklif qabul qilish: bitta taklif ACCEPTED, qolganlari REJECTED, muammo MATCHED bo'ladi — race condition'siz.
 - Kontakt maxfiyligi: email/telefon faqat taklif qabul qilingandan so'ng backend darajasida ochiladi.
-- Admin moderatsiya: foydalanuvchilarni bloklash/o'chirish, muammo/taklif spamini o'chirish.
+- SUPERADMIN moderatsiya: foydalanuvchi/ADMIN boshqaruvi, muammo/taklif/kon/chiqindi spamini o'chirish.
 - Cookie-based session autentifikatsiya (HttpOnly, PostgreSQL session store).
 
 ## Chetlab o'tilgan funksiyalar (MVP doirasidan tashqarida)
@@ -88,7 +100,7 @@ docker compose exec api npm run db:seed
 | `WEB_ORIGIN` | Frontend manzili (CORS uchun) |
 | `UPLOAD_DIR` | Fayllar saqlanadigan papka |
 | `MAX_UPLOAD_MB` | Maksimal fayl hajmi (MB) |
-| `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PHONE`, `ADMIN_PASSWORD` | Seed orqali yaratiladigan administrator ma'lumotlari |
+| `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PHONE`, `ADMIN_PASSWORD` | Seed orqali yaratiladigan SUPERADMIN ma'lumotlari |
 | `SEED_FORCE` | `production`da namunaviy muammo/taklif ma'lumotlarini majburan qayta yaratish uchun `1` qiymatini bering (standart holatda production'da bu qadam o'tkazib yuboriladi) |
 
 ## Buyruqlar
@@ -121,23 +133,23 @@ tasodifan tozalashning oldini oladi.
 
 | Rol | Email | Parol |
 |---|---|---|
-| Administrator | `admin@buildscience.local` (yoki `.env` dagi `ADMIN_EMAIL`) | `.env` dagi `ADMIN_PASSWORD` |
-| Korxona | `qurilish-invest@buildscience.local` | `Company12345!` |
-| Korxona | `betonstroy@buildscience.local` | `Company12345!` |
-| Olim | `aziz.karimov@buildscience.local` | `Scientist12345!` |
-| Olim | `nodira.yusupova@buildscience.local` | `Scientist12345!` |
-| Olim | `bekzod.rahimov@buildscience.local` | `Scientist12345!` |
+| SUPERADMIN | `admin@buildscience.local` (yoki `.env` dagi `ADMIN_EMAIL`) | `.env` dagi `ADMIN_PASSWORD` |
+| ADMIN (firma) | `qurilish-invest@buildscience.local` | `Company12345!` |
+| ADMIN (firma) | `betonstroy@buildscience.local` | `Company12345!` |
+| USER | `aziz.karimov@buildscience.local` | `Scientist12345!` |
+| USER | `nodira.yusupova@buildscience.local` | `Scientist12345!` |
+| USER | `bekzod.rahimov@buildscience.local` | `Scientist12345!` |
 
 Production muhitida ushbu parollarni albatta almashtiring.
 
 ## Rol ruxsatlari (qisqacha)
 
-- **Korxona**: muammo yaratish/tahrirlash/yopish/o'chirish (takliflarsiz), o'z muammosiga kelgan takliflarni ko'rish
-  va bittasini qabul qilish.
-- **Olim**: ochiq muammolarni ko'rish, bitta muammoga bitta taklif yuborish, o'z PENDING taklifini tahrirlash/bekor
-  qilish.
-- **Administrator**: foydalanuvchi/muammo/takliflarni ko'rish, bloklash, soft-delete qilish. Admin ro'yxatdan
-  o'tkazib bo'lmaydi — faqat seed orqali yaratiladi.
+- **ADMIN (firma)**: muammo/kon/chiqindi yaratish/tahrirlash/o'chirish (o'ziniki), o'z muammosiga kelgan takliflarni
+  ko'rish va bittasini qabul qilish. Faqat SUPERADMIN tomonidan yaratiladi — ochiq ro'yxatdan o'tish yo'q.
+- **USER**: ochiq muammolarni ko'rish, bitta muammoga bitta taklif yuborish, o'z PENDING taklifini tahrirlash/bekor
+  qilish. Ochiq ro'yxatdan o'tadigan yagona rol.
+- **SUPERADMIN**: ADMIN (firma) akkaunt yaratish, foydalanuvchi/muammo/taklif/kon/chiqindini ko'rish, bloklash,
+  soft-delete qilish. Faqat seed orqali yaratiladi.
 
 ## API xaritasi
 
@@ -148,18 +160,24 @@ Barcha endpointlar `/api` prefiksi bilan boshlanadi.
   `PATCH /auth/password`
 - `GET /public/stats`
 - `GET /problems`, `GET /problems/:id`, `POST /problems`, `PATCH /problems/:id`, `DELETE /problems/:id`,
-  `POST /problems/:id/close`, `GET /company/problems`
+  `POST /problems/:id/close`, `GET /company/problems`, `GET /company/stats`
 - `POST /problems/:id/proposals`, `GET /problems/:id/proposals`, `GET /proposals/mine`, `GET /proposals/:id`,
   `PATCH /proposals/:id`, `POST /proposals/:id/withdraw`, `POST /proposals/:id/accept`,
-  `GET /proposals/:id/attachment`, `GET /company/proposals/recent`
+  `GET /proposals/:id/attachment`, `GET /company/proposals/recent`, `GET /company/proposals`
+- `GET /mines`, `GET /mines/:id`, `GET /company/mines`, `POST /company/mines`, `DELETE /company/mines/:id`
+- `GET /waste`, `GET /waste/:id`, `GET /company/waste`, `POST /company/waste`, `DELETE /company/waste/:id`
 - `GET /connections`, `GET /connections/:proposalId`
-- `GET /admin/stats`, `GET /admin/users`, `PATCH /admin/users/:id/status`, `DELETE /admin/users/:id`,
-  `GET /admin/problems`, `DELETE /admin/problems/:id`, `GET /admin/proposals`, `DELETE /admin/proposals/:id`
+- `GET /admin/stats`, `POST /admin/admins`, `GET /admin/users`, `PATCH /admin/users/:id/status`,
+  `DELETE /admin/users/:id`, `GET /admin/problems`, `DELETE /admin/problems/:id`, `GET /admin/proposals`,
+  `DELETE /admin/proposals/:id`, `GET /admin/mines`, `DELETE /admin/mines/:id`, `GET /admin/waste`,
+  `DELETE /admin/waste/:id`
 
 ## Fayl yuklash qoidalari
 
-PDF, JPG, JPEG, PNG; maksimal 10 MB; MIME va kengaytma tekshiriladi; fayl nomi tasodifiy generatsiya qilinadi; yuklab
-olish faqat taklif egasi (olim), muammo egasi (korxona) yoki administrator uchun ruxsat etiladi.
+Taklif ilovasi: PDF, JPG, JPEG, PNG; maksimal 10 MB. Kon/chiqindi rasm galereyasi: JPG/PNG, bittada 6 tagacha, har
+biri 10 MB gacha, ochiq (`/uploads/public`) orqali beriladi. Barcha yuklashlarda MIME va kengaytma tekshiriladi,
+fayl nomi tasodifiy generatsiya qilinadi. Taklif ilovasini yuklab olish faqat taklif egasi (foydalanuvchi), muammo
+egasi (firma) yoki SUPERADMIN uchun ruxsat etiladi.
 
 ## Xavfsizlik
 

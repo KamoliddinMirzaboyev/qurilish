@@ -46,7 +46,7 @@ function AcceptedPanel({ proposal }: { proposal: ProposalListItem }) {
   );
 }
 
-export default function ScientistProposalsPage() {
+export default function UserProposalsPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]["value"]>("ALL");
   const [editTarget, setEditTarget] = useState<ProposalListItem | null>(null);
   const [withdrawTarget, setWithdrawTarget] = useState<ProposalListItem | null>(null);

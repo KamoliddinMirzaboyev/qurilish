@@ -20,13 +20,13 @@ export const publicRouter = Router();
 publicRouter.get(
   "/stats",
   asyncHandler(async (_req, res) => {
-    const [openProblems, matchedProblems, totalCompanies, totalScientists] = await Promise.all([
+    const [openProblems, matchedProblems, totalAdmins, totalUsers] = await Promise.all([
       prisma.problem.count({ where: { status: "OPEN", deletedAt: null } }),
       prisma.problem.count({ where: { status: "MATCHED", deletedAt: null } }),
-      prisma.user.count({ where: { role: "COMPANY", deletedAt: null } }),
-      prisma.user.count({ where: { role: "SCIENTIST", deletedAt: null } }),
+      prisma.user.count({ where: { role: "ADMIN", deletedAt: null } }),
+      prisma.user.count({ where: { role: "USER", deletedAt: null } }),
     ]);
-    const stats: PublicStats = { openProblems, matchedProblems, totalCompanies, totalScientists };
+    const stats: PublicStats = { openProblems, matchedProblems, totalAdmins, totalUsers };
     ok(res, stats);
   })
 );

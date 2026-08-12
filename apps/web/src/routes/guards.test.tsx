@@ -25,7 +25,7 @@ function renderGuardedRoute() {
 describe("route guards", () => {
   it("redirects a logged-in user with the wrong role to /forbidden", () => {
     mockUseAuth.mockReturnValue({
-      user: { id: "1", role: "SCIENTIST", name: "Test", email: "t@t.local" },
+      user: { id: "1", role: "USER", name: "Test", email: "t@t.local" },
       isLoading: false,
     });
 

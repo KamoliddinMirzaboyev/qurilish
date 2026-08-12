@@ -4,30 +4,31 @@ import { prisma } from "../src/services/prisma.js";
 import { hashPassword } from "../src/utils/password.js";
 
 describe("auth", () => {
-  it("registers a company", async () => {
+  it("logs an ADMIN (firma) in", async () => {
     const { res } = await registerCompany();
-    expect(res.status).toBe(201);
-    expect(res.body.data.role).toBe("COMPANY");
+    expect(res.status).toBe(200);
+    expect(res.body.data.role).toBe("ADMIN");
   });
 
-  it("registers a scientist", async () => {
+  it("registers a USER", async () => {
     const { res } = await registerScientist();
     expect(res.status).toBe(201);
-    expect(res.body.data.role).toBe("SCIENTIST");
+    expect(res.body.data.role).toBe("USER");
   });
 
-  it("rejects ADMIN role at registration", async () => {
+  it("ignores a client-supplied role and always creates USER", async () => {
     const res = await agent()
       .post("/api/auth/register")
       .send({
-        role: "ADMIN",
+        role: "SUPERADMIN",
         name: "Hacker",
         email: "hacker@test.local",
         phone: "+998901112233",
         password: "Password123",
         passwordConfirm: "Password123",
       });
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(201);
+    expect(res.body.data.role).toBe("USER");
   });
 
   it("logs in with valid credentials", async () => {
@@ -53,7 +54,7 @@ describe("auth", () => {
   it("rejects login for an already-blocked user", async () => {
     await prisma.user.create({
       data: {
-        role: "COMPANY",
+        role: "ADMIN",
         name: "Blocked Co",
         email: "blocked-co@test.local",
         phone: "+998909998877",
@@ -63,5 +64,10 @@ describe("auth", () => {
     });
     const res = await agent().post("/api/auth/login").send({ email: "blocked-co@test.local", password: "Password123" });
     expect(res.status).toBe(403);
+  });
+
+  it("init-admin route no longer exists", async () => {
+    const res = await agent().get("/api/auth/init-admin");
+    expect(res.status).toBe(404);
   });
 });

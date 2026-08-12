@@ -103,8 +103,8 @@ export interface ConnectionScientistView {
 export interface PublicStats {
   openProblems: number;
   matchedProblems: number;
-  totalCompanies: number;
-  totalScientists: number;
+  totalAdmins: number;
+  totalUsers: number;
 }
 
 export interface CompanyStats {
@@ -112,4 +112,68 @@ export interface CompanyStats {
   matchedProblems: number;
   closedProblems: number;
   totalProposals: number;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  totalAdmins: number;
+  openProblems: number;
+  totalProposals: number;
+  acceptedProposals: number;
+  blockedUsers: number;
+  totalMines: number;
+  totalWaste: number;
+}
+
+export interface GalleryImage {
+  id: string;
+  url: string;
+}
+
+export interface MineListItem {
+  id: string;
+  name: string;
+  location: string;
+  rawMaterialType: string;
+  volume: string;
+  coverImageUrl: string | null;
+  adminName: string;
+  createdAt: string;
+}
+
+export interface MineDetail {
+  id: string;
+  adminId: string;
+  name: string;
+  description: string | null;
+  location: string;
+  rawMaterialType: string;
+  volume: string;
+  images: GalleryImage[];
+  adminName: string;
+  createdAt: string;
+}
+
+export interface WasteListItem {
+  id: string;
+  factoryName: string;
+  composition: string;
+  volume: string;
+  annualVolume: string;
+  coverImageUrl: string | null;
+  adminName: string;
+  createdAt: string;
+}
+
+export interface WasteDetail {
+  id: string;
+  adminId: string;
+  factoryName: string;
+  composition: string;
+  volume: string;
+  annualVolume: string;
+  description: string | null;
+  images: GalleryImage[];
+  adminName: string;
+  createdAt: string;
 }

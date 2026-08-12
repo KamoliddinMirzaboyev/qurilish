@@ -17,5 +17,9 @@ const { prisma } = await import("../src/services/prisma.js");
 beforeEach(async () => {
   await prisma.proposal.deleteMany({});
   await prisma.problem.deleteMany({});
+  await prisma.mineImage.deleteMany({});
+  await prisma.mine.deleteMany({});
+  await prisma.wasteImage.deleteMany({});
+  await prisma.waste.deleteMany({});
   await prisma.user.deleteMany({});
 });

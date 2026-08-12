@@ -15,7 +15,7 @@ import { formatMoney } from "@/lib/format";
 
 const categoryOptions = Object.entries(CATEGORY_LABELS_UZ).map(([value, label]) => ({ value, label }));
 
-export default function CompanyProblemFormPage() {
+export default function AdminProblemFormPage() {
   const { problemId } = useParams();
   const isEdit = !!problemId;
   const navigate = useNavigate();

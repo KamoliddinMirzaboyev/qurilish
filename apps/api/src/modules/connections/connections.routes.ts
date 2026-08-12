@@ -23,7 +23,7 @@ connectionsRouter.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const user = req.user!;
-    if (user.role === "COMPANY") {
+    if (user.role === "ADMIN") {
       const proposals = await prisma.proposal.findMany({
         where: { status: "ACCEPTED", deletedAt: null, problem: { companyId: user.id } },
         include: { scientist: true, problem: true },
@@ -43,7 +43,7 @@ connectionsRouter.get(
       return ok(res, { items });
     }
 
-    if (user.role === "SCIENTIST") {
+    if (user.role === "USER") {
       const proposals = await prisma.proposal.findMany({
         where: { status: "ACCEPTED", deletedAt: null, scientistId: user.id },
         include: { problem: { include: { company: true } } },
@@ -91,9 +91,9 @@ connectionsRouter.get(
     });
     if (!proposal) throw AppError.notFound("Bog'lanish topilmadi.");
 
-    const isCompanyOwner = user.role === "COMPANY" && proposal.problem.companyId === user.id;
-    const isAcceptedScientist = user.role === "SCIENTIST" && proposal.scientistId === user.id;
-    const isAdmin = user.role === "ADMIN";
+    const isCompanyOwner = user.role === "ADMIN" && proposal.problem.companyId === user.id;
+    const isAcceptedScientist = user.role === "USER" && proposal.scientistId === user.id;
+    const isAdmin = user.role === "SUPERADMIN";
     if (!isCompanyOwner && !isAcceptedScientist && !isAdmin) throw AppError.forbidden();
 
     if (isAcceptedScientist) {

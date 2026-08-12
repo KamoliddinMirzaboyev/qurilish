@@ -13,7 +13,7 @@ export async function registerUser(input: RegisterInput) {
 
   const user = await prisma.user.create({
     data: {
-      role: input.role,
+      role: "USER",
       name: input.name,
       email,
       phone: normalizePhone(input.phone),

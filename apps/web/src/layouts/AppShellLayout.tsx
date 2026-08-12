@@ -15,25 +15,30 @@ interface NavItem {
 }
 
 const navByRole: Record<string, NavItem[]> = {
-  COMPANY: [
-    { label: "Boshqaruv paneli", to: "/app/company", end: true },
-    { label: "Muammolarim", to: "/app/company/problems" },
-    { label: "Takliflar", to: "/app/company/proposals" },
-    { label: "Bog'lanishlar", to: "/app/connections" },
-    { label: "Profil", to: "/app/profile" },
-  ],
-  SCIENTIST: [
-    { label: "Boshqaruv paneli", to: "/app/scientist", end: true },
-    { label: "Muammolar banki", to: "/app/problems" },
-    { label: "Takliflarim", to: "/app/scientist/proposals" },
-    { label: "Bog'lanishlar", to: "/app/connections" },
-    { label: "Profil", to: "/app/profile" },
-  ],
   ADMIN: [
-    { label: "Boshqaruv paneli", to: "/admin", end: true },
-    { label: "Foydalanuvchilar", to: "/admin/users" },
-    { label: "Muammolar", to: "/admin/problems" },
-    { label: "Takliflar", to: "/admin/proposals" },
+    { label: "Boshqaruv paneli", to: "/app/admin", end: true },
+    { label: "Muammolarim", to: "/app/admin/problems" },
+    { label: "Takliflar", to: "/app/admin/proposals" },
+    { label: "Konlarim", to: "/app/admin/mines" },
+    { label: "Chiqindilarim", to: "/app/admin/waste" },
+    { label: "Bog'lanishlar", to: "/app/connections" },
+    { label: "Profil", to: "/app/profile" },
+  ],
+  USER: [
+    { label: "Boshqaruv paneli", to: "/app/user", end: true },
+    { label: "Muammolar banki", to: "/app/problems" },
+    { label: "Takliflarim", to: "/app/user/proposals" },
+    { label: "Bog'lanishlar", to: "/app/connections" },
+    { label: "Profil", to: "/app/profile" },
+  ],
+  SUPERADMIN: [
+    { label: "Boshqaruv paneli", to: "/superadmin", end: true },
+    { label: "Firmalar", to: "/superadmin/admins" },
+    { label: "Foydalanuvchilar", to: "/superadmin/users" },
+    { label: "Muammolar", to: "/superadmin/problems" },
+    { label: "Takliflar", to: "/superadmin/proposals" },
+    { label: "Konlar", to: "/superadmin/mines" },
+    { label: "Chiqindi", to: "/superadmin/waste" },
     { label: "Profil", to: "/app/profile" },
   ],
 };

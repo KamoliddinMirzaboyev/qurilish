@@ -27,7 +27,7 @@ function priceValue(p: ProposalListItem) {
   return p.priceNegotiable || !p.proposedPrice ? Number.POSITIVE_INFINITY : Number(p.proposedPrice);
 }
 
-export default function CompanyProblemProposalsPage() {
+export default function AdminProblemProposalsPage() {
   const { problemId } = useParams();
   const [sort, setSort] = useState("newest");
   const [confirmTarget, setConfirmTarget] = useState<ProposalListItem | null>(null);
@@ -63,7 +63,7 @@ export default function CompanyProblemProposalsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Breadcrumb items={[{ label: "Muammolarim", to: "/app/company/problems" }, { label: "Takliflar" }]} />
+      <Breadcrumb items={[{ label: "Muammolarim", to: "/app/admin/problems" }, { label: "Takliflar" }]} />
 
       <PageHeader
         title={problem?.title ?? "Takliflar"}
@@ -127,13 +127,10 @@ export default function CompanyProblemProposalsPage() {
                   </a>
                 )}
               </div>
-              {proposal.status === "EXPERT_APPROVED" && !acceptedProposal && (
+              {proposal.status === "PENDING" && !acceptedProposal && (
                 <Button className="self-start" onClick={() => setConfirmTarget(proposal)}>
                   Taklifni qabul qilish
                 </Button>
-              )}
-              {proposal.status === "PENDING" && !acceptedProposal && (
-                <p className="text-sm italic text-amber-600">Ekspert xulosasi kutilmoqda...</p>
               )}
               {proposal.status === "REJECTED" && <p className="text-sm text-ink-muted">Rad etildi</p>}
             </Card>

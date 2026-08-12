@@ -1,8 +1,7 @@
 export const Role = {
-  COMPANY: "COMPANY",
-  SCIENTIST: "SCIENTIST",
-  EXPERT: "EXPERT",
+  SUPERADMIN: "SUPERADMIN",
   ADMIN: "ADMIN",
+  USER: "USER",
 } as const;
 export type Role = (typeof Role)[keyof typeof Role];
 
@@ -21,7 +20,6 @@ export type ProblemStatus = (typeof ProblemStatus)[keyof typeof ProblemStatus];
 
 export const ProposalStatus = {
   PENDING: "PENDING",
-  EXPERT_APPROVED: "EXPERT_APPROVED",
   ACCEPTED: "ACCEPTED",
   REJECTED: "REJECTED",
   WITHDRAWN: "WITHDRAWN",
@@ -48,10 +46,9 @@ export const Category = {
 export type Category = (typeof Category)[keyof typeof Category];
 
 export const ROLE_LABELS_UZ: Record<Role, string> = {
-  COMPANY: "Korxona",
-  SCIENTIST: "Olim",
-  EXPERT: "Ekspert",
-  ADMIN: "Administrator",
+  SUPERADMIN: "Hokimiyat",
+  ADMIN: "Firma",
+  USER: "Foydalanuvchi",
 };
 
 export const USER_STATUS_LABELS_UZ: Record<UserStatus, string> = {
@@ -61,13 +58,12 @@ export const USER_STATUS_LABELS_UZ: Record<UserStatus, string> = {
 
 export const PROBLEM_STATUS_LABELS_UZ: Record<ProblemStatus, string> = {
   OPEN: "Ochiq",
-  MATCHED: "Olim tanlangan",
+  MATCHED: "Foydalanuvchi tanlangan",
   CLOSED: "Yopilgan",
 };
 
 export const PROPOSAL_STATUS_LABELS_UZ: Record<ProposalStatus, string> = {
-  PENDING: "Ekspertizada",
-  EXPERT_APPROVED: "Kutilmoqda",
+  PENDING: "Kutilmoqda",
   ACCEPTED: "Qabul qilindi",
   REJECTED: "Rad etildi",
   WITHDRAWN: "Bekor qilindi",

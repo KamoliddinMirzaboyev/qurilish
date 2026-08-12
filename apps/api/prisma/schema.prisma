@@ -8,10 +8,9 @@ datasource db {
 }
 
 enum Role {
-  COMPANY
-  SCIENTIST
-  EXPERT
+  SUPERADMIN
   ADMIN
+  USER
 }
 
 enum UserStatus {
@@ -27,7 +26,6 @@ enum ProblemStatus {
 
 enum ProposalStatus {
   PENDING
-  EXPERT_APPROVED
   ACCEPTED
   REJECTED
   WITHDRAWN
@@ -65,9 +63,10 @@ model User {
   updatedAt      DateTime   @updatedAt
   deletedAt      DateTime?
 
-  problems          Problem[]
-  proposals         Proposal[]
-  reviewedProposals Proposal[] @relation("ReviewedProposals")
+  problems  Problem[]
+  proposals Proposal[]
+  mines     Mine[]
+  wastes    Waste[]
 
   @@index([role])
   @@index([status])
@@ -114,9 +113,6 @@ model Proposal {
   attachmentMime          String?
   attachmentSize          Int?
   status                  ProposalStatus @default(PENDING)
-  reviewedById            String?
-  reviewedBy              User?          @relation("ReviewedProposals", fields: [reviewedById], references: [id])
-  reviewedAt              DateTime?
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt
   acceptedAt              DateTime?
@@ -128,4 +124,74 @@ model Proposal {
   @@index([scientistId])
   @@index([status])
   @@map("proposals")
+}
+
+model Mine {
+  id              String    @id @default(uuid())
+  adminId         String
+  admin           User      @relation(fields: [adminId], references: [id])
+  name            String
+  description     String?
+  location        String
+  rawMaterialType String
+  volume          String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  images MineImage[]
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("mines")
+}
+
+model MineImage {
+  id           String   @id @default(uuid())
+  mineId       String
+  mine         Mine     @relation(fields: [mineId], references: [id], onDelete: Cascade)
+  storedName   String
+  originalName String
+  mimeType     String
+  size         Int
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([mineId])
+  @@map("mine_images")
+}
+
+model Waste {
+  id           String    @id @default(uuid())
+  adminId      String
+  admin        User      @relation(fields: [adminId], references: [id])
+  factoryName  String
+  composition  String
+  volume       String
+  annualVolume String
+  description  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  images WasteImage[]
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("waste")
+}
+
+model WasteImage {
+  id           String   @id @default(uuid())
+  wasteId      String
+  waste        Waste    @relation(fields: [wasteId], references: [id], onDelete: Cascade)
+  storedName   String
+  originalName String
+  mimeType     String
+  size         Int
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([wasteId])
+  @@map("waste_images")
 }

@@ -1,17 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AuthUser, Paginated, ProblemListItem, ProposalListItem } from "@buildscience/shared";
+import type {
+  AdminStats,
+  AuthUser,
+  CreateAdminInput,
+  MineListItem,
+  Paginated,
+  ProblemListItem,
+  ProposalListItem,
+  WasteListItem,
+} from "@buildscience/shared";
 import { api } from "@/lib/api";
 import { toQueryString } from "@/lib/query";
-
-interface AdminStats {
-  totalUsers: number;
-  totalCompanies: number;
-  totalScientists: number;
-  openProblems: number;
-  totalProposals: number;
-  acceptedProposals: number;
-  blockedUsers: number;
-}
 
 export function useAdminStats() {
   return useQuery({ queryKey: ["admin-stats"], queryFn: () => api.get<AdminStats>("/admin/stats") });
@@ -37,6 +36,14 @@ export function useDeleteUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (userId: string) => api.delete(`/admin/users/${userId}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+  });
+}
+
+export function useCreateAdmin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateAdminInput) => api.post<AuthUser>("/admin/admins", input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
   });
 }
@@ -68,5 +75,35 @@ export function useDeleteAdminProposal() {
   return useMutation({
     mutationFn: (proposalId: string) => api.delete(`/admin/proposals/${proposalId}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-proposals"] }),
+  });
+}
+
+export function useAdminMinesModeration(filters: { search?: string; sort?: string; page: number }) {
+  return useQuery({
+    queryKey: ["admin-mines-moderation", filters],
+    queryFn: () => api.get<Paginated<MineListItem>>(`/admin/mines${toQueryString({ ...filters, pageSize: 20 })}`),
+  });
+}
+
+export function useDeleteAdminMine() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (mineId: string) => api.delete(`/admin/mines/${mineId}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-mines-moderation"] }),
+  });
+}
+
+export function useAdminWasteModeration(filters: { search?: string; sort?: string; page: number }) {
+  return useQuery({
+    queryKey: ["admin-waste-moderation", filters],
+    queryFn: () => api.get<Paginated<WasteListItem>>(`/admin/waste${toQueryString({ ...filters, pageSize: 20 })}`),
+  });
+}
+
+export function useDeleteAdminWaste() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (wasteId: string) => api.delete(`/admin/waste/${wasteId}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-waste-moderation"] }),
   });
 }
