@@ -41,6 +41,9 @@ services:
       COOKIE_SAMESITE: ${COOKIE_SAMESITE:-none}
       UPLOAD_DIR: uploads
       MAX_UPLOAD_MB: 10
+      # Kon/chiqindi rasm galereyasi ochiq URL bilan qaytarilishi kerak — frontend (Vercel) va
+      # backend boshqa domenda bo'lgani uchun nisbiy "/uploads/public" ishlamaydi.
+      PUBLIC_UPLOAD_BASE_URL: ${PUBLIC_UPLOAD_BASE_URL:-https://qurilishapi.webportfolio.uz/uploads/public}
       PG_POOL_MAX: 10
       ADMIN_NAME: ${ADMIN_NAME:-BuildScience Administrator}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@buildscience.local}
