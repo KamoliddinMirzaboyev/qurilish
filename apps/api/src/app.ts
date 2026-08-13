@@ -39,6 +39,13 @@ if (!env.isProduction) app.use(morgan("dev"));
 app.use(sessionMiddleware);
 app.use("/api", generalLimiter);
 
+// Helmet standart bo'yicha Cross-Origin-Resource-Policy: same-origin qo'yadi — bu rasmlarni
+// boshqa domendagi frontend (Vercel) <img> orqali yuklashini bloklaydi. Faqat shu ochiq
+// galereya yo'lida bu cheklovni bo'shatamiz (API javoblari uchun qattiq siyosat saqlanadi).
+app.use("/uploads/public", (_req, res, next) => {
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  next();
+});
 app.use("/uploads/public", express.static(uploadPublicRoot));
 
 app.use("/api/health", healthRouter);

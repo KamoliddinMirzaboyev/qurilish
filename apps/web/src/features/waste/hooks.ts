@@ -48,6 +48,30 @@ export function useCreateWaste() {
   });
 }
 
+export function useUpdateWaste(wasteId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ input, images }: { input: WasteInput; images: File[] }) =>
+      api.patchForm<WasteDetail>(`/company/waste/${wasteId}`, toFormData(input, images)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-own-waste"] });
+      queryClient.invalidateQueries({ queryKey: ["waste"] });
+      queryClient.invalidateQueries({ queryKey: ["waste-item", wasteId] });
+    },
+  });
+}
+
+export function useDeleteWasteImage(wasteId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (imageId: string) => api.delete(`/company/waste/${wasteId}/images/${imageId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["waste-item", wasteId] });
+      queryClient.invalidateQueries({ queryKey: ["waste"] });
+    },
+  });
+}
+
 export function useDeleteWaste() {
   const queryClient = useQueryClient();
   return useMutation({

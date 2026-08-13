@@ -57,6 +57,9 @@ export default function AdminWastePage() {
                 <Link to={`/waste/${waste.id}`} className="text-sm font-medium text-ink-muted">
                   Ko'rish
                 </Link>
+                <Link to={`/app/admin/waste/${waste.id}/edit`} className="text-sm font-medium text-brand-primary">
+                  Tahrirlash
+                </Link>
                 <IconButton label="O'chirish" onClick={() => setDeleteTarget(waste.id)}>
                   <Trash2 size={16} className="text-danger" />
                 </IconButton>

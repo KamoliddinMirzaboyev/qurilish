@@ -157,6 +157,108 @@ minesRouter.post(
 /**
  * @openapi
  * /admin/mines/{mineId}:
+ *   patch:
+ *     tags: [Mines]
+ *     summary: Konni tahrirlash (SUPERADMIN, yangi rasmlar qo'shish mumkin)
+ *     parameters:
+ *       - in: path
+ *         name: mineId
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [name, location, rawMaterialType, volume]
+ *             properties:
+ *               name: { type: string }
+ *               description: { type: string }
+ *               location: { type: string }
+ *               rawMaterialType: { type: string }
+ *               volume: { type: string }
+ *               images: { type: array, items: { type: string, format: binary } }
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+minesRouter.patch(
+  "/admin/mines/:mineId",
+  requireAuth,
+  requireRole("SUPERADMIN"),
+  handleGalleryUpload,
+  asyncHandler(async (req, res) => {
+    const existing = await prisma.mine.findFirst({ where: { id: req.params.mineId, deletedAt: null }, include: { images: true } });
+    if (!existing) throw AppError.notFound("Kon topilmadi.");
+
+    const parsed = mineSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const errors: Record<string, string[]> = {};
+      for (const issue of parsed.error.issues) errors[issue.path.join(".") || "form"] = [issue.message];
+      throw AppError.unprocessable("Kiritilgan ma'lumotlarda xatolik bor.", errors);
+    }
+
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    const updated = await prisma.mine.update({
+      where: { id: existing.id },
+      data: {
+        name: parsed.data.name,
+        description: parsed.data.description || null,
+        location: parsed.data.location,
+        rawMaterialType: parsed.data.rawMaterialType,
+        volume: parsed.data.volume,
+        images: {
+          create: files.map((f, i) => ({
+            storedName: f.filename,
+            originalName: f.originalname,
+            mimeType: f.mimetype,
+            size: f.size,
+            sortOrder: existing.images.length + i,
+          })),
+        },
+      },
+      include,
+    });
+    ok(res, toMineDetail(updated));
+  })
+);
+
+/**
+ * @openapi
+ * /admin/mines/{mineId}/images/{imageId}:
+ *   delete:
+ *     tags: [Mines]
+ *     summary: Kon rasmini o'chirish (SUPERADMIN)
+ *     parameters:
+ *       - in: path
+ *         name: mineId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: imageId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       204:
+ *         description: O'chirildi
+ */
+minesRouter.delete(
+  "/admin/mines/:mineId/images/:imageId",
+  requireAuth,
+  requireRole("SUPERADMIN"),
+  asyncHandler(async (req, res) => {
+    const image = await prisma.mineImage.findFirst({ where: { id: req.params.imageId, mineId: req.params.mineId } });
+    if (!image) throw AppError.notFound("Rasm topilmadi.");
+    await prisma.mineImage.delete({ where: { id: image.id } });
+    await fs.unlink(path.join(uploadPublicRoot, image.storedName)).catch(() => undefined);
+    res.status(204).send();
+  })
+);
+
+/**
+ * @openapi
+ * /admin/mines/{mineId}:
  *   delete:
  *     tags: [Mines]
  *     summary: Konni o'chirish (SUPERADMIN)

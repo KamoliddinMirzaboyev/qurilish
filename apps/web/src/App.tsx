@@ -83,6 +83,7 @@ export default function App() {
                       <Route path="/app/admin/problems/:problemId/proposals" element={<AdminProblemProposalsPage />} />
                       <Route path="/app/admin/waste" element={<AdminWastePage />} />
                       <Route path="/app/admin/waste/new" element={<AdminWasteFormPage />} />
+                      <Route path="/app/admin/waste/:wasteId/edit" element={<AdminWasteFormPage />} />
                     </Route>
 
                     <Route element={<RequireRole roles={["USER"]} />}>
@@ -100,6 +101,7 @@ export default function App() {
                       <Route path="/superadmin/proposals" element={<SuperAdminProposalsPage />} />
                       <Route path="/superadmin/mines" element={<SuperAdminMinesPage />} />
                       <Route path="/superadmin/mines/new" element={<SuperAdminMineFormPage />} />
+                      <Route path="/superadmin/mines/:mineId/edit" element={<SuperAdminMineFormPage />} />
                       <Route path="/superadmin/waste" element={<SuperAdminWastePage />} />
                     </Route>
                   </Route>

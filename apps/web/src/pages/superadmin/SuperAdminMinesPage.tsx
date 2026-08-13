@@ -63,6 +63,9 @@ export default function SuperAdminMinesPage() {
                   {mine.location} · {mine.adminName}
                 </p>
               </div>
+              <Link to={`/superadmin/mines/${mine.id}/edit`} className="text-sm font-medium text-brand-primary">
+                Tahrirlash
+              </Link>
               <IconButton label="O'chirish" onClick={() => setDeleteTarget(mine.id)}>
                 <Trash2 size={16} className="text-danger" />
               </IconButton>

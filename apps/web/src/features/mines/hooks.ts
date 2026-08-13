@@ -41,3 +41,28 @@ export function useCreateMine() {
     },
   });
 }
+
+/** SUPERADMIN — mavjud konni tahrirlaydi, yangi rasmlarni qo'shimcha qiladi. */
+export function useUpdateMine(mineId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ input, images }: { input: MineInput; images: File[] }) =>
+      api.patchForm<MineDetail>(`/admin/mines/${mineId}`, toFormData(input, images)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-mines-moderation"] });
+      queryClient.invalidateQueries({ queryKey: ["mines"] });
+      queryClient.invalidateQueries({ queryKey: ["mine", mineId] });
+    },
+  });
+}
+
+export function useDeleteMineImage(mineId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (imageId: string) => api.delete(`/admin/mines/${mineId}/images/${imageId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mine", mineId] });
+      queryClient.invalidateQueries({ queryKey: ["mines"] });
+    },
+  });
+}
