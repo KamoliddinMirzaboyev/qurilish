@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import type { Role } from "@buildscience/shared";
 import { useAuth } from "@/features/auth/AuthContext";
 import { dashboardPathForRole } from "./paths";
-import { AppShellSkeleton, PageSkeleton, PublicChromeSkeleton } from "@/components/ui/Skeleton";
+import { AppShellSkeleton, PageSkeleton } from "@/components/ui/Skeleton";
 
 export function FullScreenLoader() {
   return <AppShellSkeleton />;
@@ -23,7 +23,7 @@ export function RequireAuth() {
 
 export function RequireGuest() {
   const { user, isLoading } = useAuth();
-  if (isLoading) return <PublicChromeSkeleton />;
+  if (isLoading) return null;
   if (user) return <Navigate to={dashboardPathForRole(user.role)} replace />;
   return <Outlet />;
 }
