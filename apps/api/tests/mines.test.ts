@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { agent, registerCompany, registerSuperadmin } from "./helpers.js";
 
+// 1x1 shaffof PNG — galereya yuklash testlari uchun eng kichik amal qiluvchi fayl.
+const onePixelPng = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+  "base64"
+);
+
 async function createMine(a: ReturnType<typeof agent>) {
   return a
     .post("/api/admin/mines")
@@ -60,5 +66,47 @@ describe("mines", () => {
 
     const deleteRes = await admin.delete(`/api/admin/mines/${createRes.body.data.id}`);
     expect(deleteRes.status).toBe(403);
+  });
+
+  it("lets a SUPERADMIN edit a mine's fields", async () => {
+    const { agent: superadmin } = await registerSuperadmin();
+    const createRes = await createMine(superadmin);
+
+    const updateRes = await superadmin
+      .patch(`/api/admin/mines/${createRes.body.data.id}`)
+      .field("name", "Qibray Toshkoni (yangilangan)")
+      .field("location", "Toshkent viloyati, Qibray tumani")
+      .field("rawMaterialType", "Qurilish toshi")
+      .field("volume", "600 000 m³");
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.data.name).toBe("Qibray Toshkoni (yangilangan)");
+    expect(updateRes.body.data.volume).toBe("600 000 m³");
+  });
+
+  it("rejects adding images past the 6-image gallery cap on edit", async () => {
+    const { agent: superadmin } = await registerSuperadmin();
+    const createRes = await createMine(superadmin);
+
+    // 5 tadan boshlaymiz, keyin yana 2 ta qo'shishga urinamiz (5+2=7 > 6).
+    let req = superadmin
+      .patch(`/api/admin/mines/${createRes.body.data.id}`)
+      .field("name", "Qibray Toshkoni")
+      .field("location", "Toshkent viloyati, Qibray tumani")
+      .field("rawMaterialType", "Qurilish toshi")
+      .field("volume", "500 000 m³");
+    for (let i = 0; i < 5; i++) req = req.attach("images", onePixelPng, `img${i}.png`);
+    const firstEdit = await req;
+    expect(firstEdit.status).toBe(200);
+    expect(firstEdit.body.data.images).toHaveLength(5);
+
+    let secondReq = superadmin
+      .patch(`/api/admin/mines/${createRes.body.data.id}`)
+      .field("name", "Qibray Toshkoni")
+      .field("location", "Toshkent viloyati, Qibray tumani")
+      .field("rawMaterialType", "Qurilish toshi")
+      .field("volume", "500 000 m³");
+    for (let i = 0; i < 2; i++) secondReq = secondReq.attach("images", onePixelPng, `extra${i}.png`);
+    const secondEdit = await secondReq;
+    expect(secondEdit.status).toBe(400);
   });
 });

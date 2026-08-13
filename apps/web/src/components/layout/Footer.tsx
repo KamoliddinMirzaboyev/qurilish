@@ -15,6 +15,12 @@ export function Footer() {
           <Link to="/problems" className="text-ink-muted hover:text-ink">
             Muammolar
           </Link>
+          <Link to="/mines" className="text-ink-muted hover:text-ink">
+            Konlar
+          </Link>
+          <Link to="/waste" className="text-ink-muted hover:text-ink">
+            Chiqindi
+          </Link>
           <Link to="/#how-it-works" className="text-ink-muted hover:text-ink">
             Qanday ishlaydi
           </Link>

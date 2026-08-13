@@ -1,7 +1,7 @@
 import { Router } from "express";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { mineSchema, paginationQuerySchema } from "@buildscience/shared";
+import { mineSchema, paginationQuerySchema, GALLERY_UPLOAD } from "@buildscience/shared";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { validateQuery } from "../../middleware/validate.js";
 import { handleGalleryUpload, uploadPublicRoot } from "../../middleware/upload.js";
@@ -200,6 +200,9 @@ minesRouter.patch(
     }
 
     const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    if (existing.images.length + files.length > GALLERY_UPLOAD.MAX_IMAGES) {
+      throw AppError.badRequest(`Bitta kon uchun jami ${GALLERY_UPLOAD.MAX_IMAGES} tadan ortiq rasm bo'lishi mumkin emas.`);
+    }
     const updated = await prisma.mine.update({
       where: { id: existing.id },
       data: {

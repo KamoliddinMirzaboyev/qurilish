@@ -84,23 +84,3 @@ export function useAcceptProposal(problemId: string) {
     },
   });
 }
-
-export function useExpertProposals(enabled = true) {
-  return useQuery({
-    queryKey: ["expert-proposals"],
-    queryFn: () => api.get<{ items: ProposalListItem[] }>("/proposals/expert"),
-    enabled,
-  });
-}
-
-export function useExpertReviewProposal() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ proposalId, status }: { proposalId: string; status: "APPROVE" | "REJECT" }) =>
-      api.post<ProposalListItem>(`/proposals/${proposalId}/expert-review`, { status }),
-    onSuccess: (_data, { proposalId }) => {
-      queryClient.invalidateQueries({ queryKey: ["expert-proposals"] });
-      queryClient.invalidateQueries({ queryKey: ["proposal", proposalId] });
-    },
-  });
-}

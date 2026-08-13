@@ -3,7 +3,16 @@ import { Plus, X } from "lucide-react";
 import { GALLERY_UPLOAD } from "@buildscience/shared";
 import { IconButton } from "./Button";
 
-export function GalleryUploader({ files, onChange }: { files: File[]; onChange: (files: File[]) => void }) {
+export function GalleryUploader({
+  files,
+  onChange,
+  max = GALLERY_UPLOAD.MAX_IMAGES,
+}: {
+  files: File[];
+  onChange: (files: File[]) => void;
+  /** Edit rejimida mavjud rasmlar hisobga olingan qolgan joy — masalan GALLERY_UPLOAD.MAX_IMAGES - existing.length. */
+  max?: number;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<string[]>([]);
 
@@ -15,7 +24,7 @@ export function GalleryUploader({ files, onChange }: { files: File[]; onChange: 
 
   function addFiles(selected: FileList | null) {
     if (!selected) return;
-    const next = [...files, ...Array.from(selected)].slice(0, GALLERY_UPLOAD.MAX_IMAGES);
+    const next = [...files, ...Array.from(selected)].slice(0, max);
     onChange(next);
   }
 
@@ -38,7 +47,7 @@ export function GalleryUploader({ files, onChange }: { files: File[]; onChange: 
             </IconButton>
           </div>
         ))}
-        {files.length < GALLERY_UPLOAD.MAX_IMAGES && (
+        {files.length < max && (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}

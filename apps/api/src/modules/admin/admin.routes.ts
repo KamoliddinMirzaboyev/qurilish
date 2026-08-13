@@ -1,8 +1,11 @@
 import { Router } from "express";
+import path from "node:path";
+import fs from "node:fs/promises";
 import type { Prisma } from "@prisma/client";
 import { adminUserStatusSchema, createAdminSchema, paginationQuerySchema, type AdminStats } from "@buildscience/shared";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { validateBody, validateQuery } from "../../middleware/validate.js";
+import { uploadPublicRoot } from "../../middleware/upload.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ok, paginate } from "../../utils/response.js";
 import { AppError } from "../../utils/AppError.js";
@@ -437,9 +440,10 @@ adminRouter.get(
 adminRouter.delete(
   "/waste/:wasteId",
   asyncHandler(async (req, res) => {
-    const waste = await prisma.waste.findFirst({ where: { id: req.params.wasteId, deletedAt: null } });
+    const waste = await prisma.waste.findFirst({ where: { id: req.params.wasteId, deletedAt: null }, include: { images: true } });
     if (!waste) throw AppError.notFound("Chiqindi e'loni topilmadi.");
     await prisma.waste.update({ where: { id: waste.id }, data: { deletedAt: new Date() } });
+    await Promise.all(waste.images.map((img) => fs.unlink(path.join(uploadPublicRoot, img.storedName)).catch(() => undefined)));
     res.status(204).send();
   })
 );

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
-import { mineSchema, type MineInput } from "@buildscience/shared";
+import { mineSchema, GALLERY_UPLOAD, type MineInput } from "@buildscience/shared";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, LoadingSkeleton } from "@/components/ui/Card";
 import { FormField, Input, Textarea } from "@/components/ui/Input";
@@ -125,7 +125,11 @@ export default function SuperAdminMineFormPage() {
           )}
 
           <FormField label={isEdit ? "Yangi rasmlar qo'shish" : "Rasmlar"}>
-            <GalleryUploader files={images} onChange={setImages} />
+            <GalleryUploader
+              files={images}
+              onChange={setImages}
+              max={GALLERY_UPLOAD.MAX_IMAGES - (existing?.images.length ?? 0)}
+            />
           </FormField>
 
           <div className="mt-2 flex justify-end gap-3">
