@@ -90,12 +90,28 @@ model Problem {
   deletedAt    DateTime?
 
   proposals Proposal[]
+  images    ProblemImage[]
 
   @@index([status])
   @@index([category])
   @@index([createdAt])
   @@index([companyId])
   @@map("problems")
+}
+
+model ProblemImage {
+  id           String   @id @default(uuid())
+  problemId    String
+  problem      Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  storedName   String
+  originalName String
+  mimeType     String
+  size         Int
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([problemId])
+  @@map("problem_images")
 }
 
 model Proposal {

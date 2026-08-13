@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Trash2 } from "lucide-react";
+import { MapPin, Layers, Gauge, Plus, Pencil, Trash2 } from "lucide-react";
 import { useAdminMinesModeration, useDeleteAdminMine } from "@/features/admin/hooks";
 import { useDebounce } from "@/hooks/useDebounce";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput, FilterBar } from "@/components/ui/SearchInput";
 import { Card, EmptyState, CardGridSkeleton } from "@/components/ui/Card";
 import { Button, IconButton } from "@/components/ui/Button";
+import { ImageSlider } from "@/components/ui/ImageSlider";
 import { ConfirmationDialog } from "@/components/ui/Modal";
 import { Pagination } from "@/components/ui/Pagination";
 import { notify } from "@/components/ui/toast";
@@ -36,6 +37,7 @@ export default function SuperAdminMinesPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Konlar"
+        subtitle={data ? `${data.total} ta kon` : undefined}
         action={
           <Button asLink to="/superadmin/mines/new">
             <Plus size={16} /> Yangi kon
@@ -50,25 +52,42 @@ export default function SuperAdminMinesPage() {
       </FilterBar>
 
       {isLoading ? (
-        <CardGridSkeleton count={4} />
+        <CardGridSkeleton count={3} />
       ) : data && data.items.length > 0 ? (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.items.map((mine) => (
-            <Card key={mine.id} className="flex flex-wrap items-center justify-between gap-4">
-              <div className="min-w-[220px] flex-1">
-                <Link to={`/mines/${mine.id}`} className="font-medium text-brand-dark hover:text-brand-primary">
-                  {mine.name}
-                </Link>
-                <p className="mt-1 text-sm text-ink-muted">
-                  {mine.location} · {mine.adminName}
+            <Card key={mine.id} className="flex flex-col gap-0 overflow-hidden !p-0">
+              <ImageSlider images={mine.images.map((img) => img.url)} alt={mine.name} className="aspect-video" />
+              <div className="flex flex-1 flex-col gap-2.5 p-4">
+                <h3 className="font-semibold text-brand-dark">{mine.name}</h3>
+                <p className="flex items-center gap-1.5 text-sm text-ink-muted">
+                  <MapPin size={14} className="shrink-0" /> {mine.location}
                 </p>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-muted">
+                  <span className="flex items-center gap-1.5">
+                    <Layers size={14} className="shrink-0" /> {mine.rawMaterialType}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Gauge size={14} className="shrink-0" /> {mine.volume}
+                  </span>
+                </div>
+                {mine.description && <p className="line-clamp-2 text-sm text-ink-muted">{mine.description}</p>}
+                <p className="text-xs text-ink-muted">E'lon beruvchi: {mine.adminName}</p>
+
+                <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+                  <Link to={`/mines/${mine.id}`} className="text-sm font-medium text-brand-primary hover:underline">
+                    Ko'rish
+                  </Link>
+                  <div className="flex gap-1">
+                    <Button asLink to={`/superadmin/mines/${mine.id}/edit`} size="sm" variant="outline">
+                      <Pencil size={14} /> Tahrirlash
+                    </Button>
+                    <IconButton label="O'chirish" onClick={() => setDeleteTarget(mine.id)} className="text-danger hover:bg-red-50">
+                      <Trash2 size={16} />
+                    </IconButton>
+                  </div>
+                </div>
               </div>
-              <Link to={`/superadmin/mines/${mine.id}/edit`} className="text-sm font-medium text-brand-primary">
-                Tahrirlash
-              </Link>
-              <IconButton label="O'chirish" onClick={() => setDeleteTarget(mine.id)}>
-                <Trash2 size={16} className="text-danger" />
-              </IconButton>
             </Card>
           ))}
         </div>

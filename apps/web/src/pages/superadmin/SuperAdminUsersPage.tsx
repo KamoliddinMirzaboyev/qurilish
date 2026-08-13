@@ -7,18 +7,27 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput, FilterBar } from "@/components/ui/SearchInput";
 import { Select } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
-import { Card, EmptyState, CardGridSkeleton } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
+import { UserAvatar } from "@/components/ui/Avatar";
+import { EmptyState, LoadingSkeleton } from "@/components/ui/Card";
+import { IconButton } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
 import { ConfirmationDialog, Modal } from "@/components/ui/Modal";
 import { notify } from "@/components/ui/toast";
 import { ApiRequestError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { Eye, Ban, CheckCircle2, Trash2 } from "lucide-react";
+import clsx from "clsx";
 
 const sortOptions = [
   { value: "newest", label: "Eng yangi" },
   { value: "oldest", label: "Eng eski" },
 ];
+
+const roleBadgeStyles: Record<Role, string> = {
+  SUPERADMIN: "bg-violet-100 text-violet-700",
+  ADMIN: "bg-amber-100 text-amber-700",
+  USER: "bg-brand-primary/10 text-brand-primary",
+};
 
 export default function SuperAdminUsersPage() {
   const { user: me } = useAuth();
@@ -63,7 +72,7 @@ export default function SuperAdminUsersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Foydalanuvchilar" />
+      <PageHeader title="Foydalanuvchilar" subtitle={data ? `${data.total} ta foydalanuvchi` : undefined} />
 
       <FilterBar>
         <div className="min-w-[220px] flex-1">
@@ -83,40 +92,81 @@ export default function SuperAdminUsersPage() {
       </FilterBar>
 
       {isLoading ? (
-        <CardGridSkeleton count={4} />
-      ) : data && data.items.length > 0 ? (
-        <div className="flex flex-col gap-3">
-          {data.items.map((u) => (
-            <Card key={u.id} className="flex flex-wrap items-center justify-between gap-4">
-              <div className="min-w-[200px] flex-1">
-                <p className="font-medium text-brand-dark">
-                  {u.name} {u.id === me?.id && <span className="text-xs text-ink-muted">(siz)</span>}
-                </p>
-                <p className="text-sm text-ink-muted">
-                  {ROLE_LABELS_UZ[u.role as Role]} · {u.email} · {u.phone}
-                </p>
-                <p className="text-xs text-ink-muted">Ro'yxatdan o'tgan: {formatDate(u.createdAt)}</p>
-              </div>
-              <Badge className={u.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}>
-                {USER_STATUS_LABELS_UZ[u.status]}
-              </Badge>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setViewTarget(u)}>
-                  Ko'rish
-                </Button>
-                {u.id !== me?.id && u.role !== "SUPERADMIN" && (
-                  <>
-                    <Button size="sm" variant="outline" onClick={() => setBlockTarget(u)}>
-                      {u.status === "ACTIVE" ? "Bloklash" : "Faollashtirish"}
-                    </Button>
-                    <Button size="sm" variant="danger" onClick={() => setDeleteTarget(u)}>
-                      O'chirish
-                    </Button>
-                  </>
-                )}
-              </div>
-            </Card>
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <LoadingSkeleton key={i} className="h-16 w-full rounded-card" />
           ))}
+        </div>
+      ) : data && data.items.length > 0 ? (
+        <div className="overflow-hidden rounded-card border border-surface-border bg-white">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-surface-border bg-surface-page text-xs font-medium uppercase tracking-wide text-ink-muted">
+                  <th className="px-4 py-3 font-medium">Foydalanuvchi</th>
+                  <th className="px-4 py-3 font-medium">Rol</th>
+                  <th className="px-4 py-3 font-medium">Aloqa</th>
+                  <th className="px-4 py-3 font-medium">Holat</th>
+                  <th className="px-4 py-3 font-medium">Ro'yxatdan o'tgan</th>
+                  <th className="px-4 py-3 text-right font-medium">Amallar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.items.map((u) => {
+                  const isSelf = u.id === me?.id;
+                  const canManage = !isSelf && u.role !== "SUPERADMIN";
+                  return (
+                    <tr key={u.id} className="border-b border-surface-border last:border-0 hover:bg-surface-page">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <UserAvatar name={u.name} size={34} />
+                          <div>
+                            <p className="font-medium text-brand-dark">
+                              {u.name} {isSelf && <span className="text-xs font-normal text-ink-muted">(siz)</span>}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge className={roleBadgeStyles[u.role as Role]}>{ROLE_LABELS_UZ[u.role as Role]}</Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-ink">{u.email}</p>
+                        <p className="text-xs text-ink-muted">{u.phone}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge className={u.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}>
+                          {USER_STATUS_LABELS_UZ[u.status]}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-ink-muted">{formatDate(u.createdAt)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <IconButton label="Ko'rish" onClick={() => setViewTarget(u)}>
+                            <Eye size={16} />
+                          </IconButton>
+                          {canManage && (
+                            <>
+                              <IconButton
+                                label={u.status === "ACTIVE" ? "Bloklash" : "Faollashtirish"}
+                                onClick={() => setBlockTarget(u)}
+                                className={clsx(u.status === "ACTIVE" && "text-amber-600 hover:bg-amber-50")}
+                              >
+                                {u.status === "ACTIVE" ? <Ban size={16} /> : <CheckCircle2 size={16} />}
+                              </IconButton>
+                              <IconButton label="O'chirish" onClick={() => setDeleteTarget(u)} className="text-danger hover:bg-red-50">
+                                <Trash2 size={16} />
+                              </IconButton>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <EmptyState title="Berilgan mezonlarga mos ma'lumot topilmadi." />

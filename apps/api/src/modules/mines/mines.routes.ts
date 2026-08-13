@@ -72,7 +72,7 @@ minesRouter.get(
  * /admin/mines:
  *   get:
  *     tags: [Mines]
- *     summary: Barcha konlar ro'yxati (SUPERADMIN)
+ *     summary: Barcha konlar ro'yxati, to'liq rasm galereyasi bilan (SUPERADMIN)
  *     responses:
  *       200:
  *         description: OK
@@ -89,7 +89,7 @@ minesRouter.get(
       prisma.mine.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize, include }),
       prisma.mine.count({ where }),
     ]);
-    ok(res, paginate(mines.map(toMineListItem), page, pageSize, total));
+    ok(res, paginate(mines.map(toMineDetail), page, pageSize, total));
   })
 );
 

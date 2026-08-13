@@ -3,7 +3,7 @@ import type {
   AdminStats,
   AuthUser,
   CreateAdminInput,
-  MineListItem,
+  MineDetail,
   Paginated,
   ProblemListItem,
   ProposalListItem,
@@ -81,7 +81,7 @@ export function useDeleteAdminProposal() {
 export function useAdminMinesModeration(filters: { search?: string; sort?: string; page: number }) {
   return useQuery({
     queryKey: ["admin-mines-moderation", filters],
-    queryFn: () => api.get<Paginated<MineListItem>>(`/admin/mines${toQueryString({ ...filters, pageSize: 20 })}`),
+    queryFn: () => api.get<Paginated<MineDetail>>(`/admin/mines${toQueryString({ ...filters, pageSize: 20 })}`),
   });
 }
 
