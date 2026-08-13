@@ -1,9 +1,19 @@
 import { Router } from "express";
+import path from "node:path";
+import fs from "node:fs/promises";
 import type { Prisma } from "@prisma/client";
-import { createProblemSchema, updateProblemSchema, problemQuerySchema, paginationQuerySchema, type CompanyStats } from "@buildscience/shared";
+import {
+  createProblemSchema,
+  updateProblemSchema,
+  problemQuerySchema,
+  paginationQuerySchema,
+  GALLERY_UPLOAD,
+  type CompanyStats,
+} from "@buildscience/shared";
 import { validateBody, validateQuery } from "../../middleware/validate.js";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { optionalAuth } from "../../middleware/optionalAuth.js";
+import { handleGalleryUpload, uploadPublicRoot } from "../../middleware/upload.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ok, paginate } from "../../utils/response.js";
 import { AppError } from "../../utils/AppError.js";
@@ -78,7 +88,11 @@ problemsRouter.get(
         orderBy,
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { company: true, _count: { select: { proposals: { where: { deletedAt: null } } } } },
+        include: {
+          company: true,
+          images: { orderBy: { sortOrder: "asc" } },
+          _count: { select: { proposals: { where: { deletedAt: null } } } },
+        },
       }),
       prisma.problem.count({ where }),
     ]);
@@ -129,7 +143,11 @@ problemsRouter.get(
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { company: true, _count: { select: { proposals: { where: { deletedAt: null } } } } },
+        include: {
+          company: true,
+          images: { orderBy: { sortOrder: "asc" } },
+          _count: { select: { proposals: { where: { deletedAt: null } } } },
+        },
       }),
       prisma.problem.count({ where }),
     ]);
@@ -169,7 +187,11 @@ problemsRouter.get(
 async function loadVisibleProblem(problemId: string, userId?: string, userRole?: string) {
   const problem = await prisma.problem.findFirst({
     where: { id: problemId, deletedAt: null },
-    include: { company: true, _count: { select: { proposals: { where: { deletedAt: null } } } } },
+    include: {
+      company: true,
+      images: { orderBy: { sortOrder: "asc" } },
+      _count: { select: { proposals: { where: { deletedAt: null } } } },
+    },
   });
   if (!problem) throw AppError.notFound("Muammo topilmadi.");
 
@@ -241,8 +263,10 @@ problemsRouter.post(
   "/problems",
   requireAuth,
   requireRole("ADMIN"),
+  handleGalleryUpload,
   validateBody(createProblemSchema),
   asyncHandler(async (req, res) => {
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
     const problem = await prisma.problem.create({
       data: {
         companyId: req.user!.id,
@@ -252,8 +276,17 @@ problemsRouter.post(
         budgetType: req.body.budgetType,
         budgetAmount: req.body.budgetAmount ?? null,
         status: "OPEN",
+        images: {
+          create: files.map((f, i) => ({
+            storedName: f.filename,
+            originalName: f.originalname,
+            mimeType: f.mimetype,
+            size: f.size,
+            sortOrder: i,
+          })),
+        },
       },
-      include: { company: true, _count: { select: { proposals: true } } },
+      include: { company: true, images: { orderBy: { sortOrder: "asc" } }, _count: { select: { proposals: true } } },
     });
     ok(res, toProblemDetail(problem, problem._count.proposals), 201);
   })
@@ -298,11 +331,18 @@ problemsRouter.patch(
   "/problems/:problemId",
   requireAuth,
   requireRole("ADMIN"),
+  handleGalleryUpload,
   validateBody(updateProblemSchema),
   asyncHandler(async (req, res) => {
-    const existing = await loadOwnedOpenProblem(req.params.problemId!, req.user!.id);
+    const existing = await prisma.problem.findFirst({ where: { id: req.params.problemId, deletedAt: null }, include: { images: true } });
+    if (!existing) throw AppError.notFound("Muammo topilmadi.");
+    if (existing.companyId !== req.user!.id) throw AppError.forbidden();
     if (existing.status !== "OPEN") {
       throw AppError.conflict("Faqat ochiq muammoni tahrirlash mumkin.");
+    }
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    if (existing.images.length + files.length > GALLERY_UPLOAD.MAX_IMAGES) {
+      throw AppError.badRequest(`Bitta muammo uchun jami ${GALLERY_UPLOAD.MAX_IMAGES} tadan ortiq rasm bo'lishi mumkin emas.`);
     }
     const updated = await prisma.problem.update({
       where: { id: existing.id },
@@ -312,10 +352,52 @@ problemsRouter.patch(
         category: req.body.category,
         budgetType: req.body.budgetType,
         budgetAmount: req.body.budgetAmount ?? null,
+        images: {
+          create: files.map((f, i) => ({
+            storedName: f.filename,
+            originalName: f.originalname,
+            mimeType: f.mimetype,
+            size: f.size,
+            sortOrder: existing.images.length + i,
+          })),
+        },
       },
-      include: { company: true, _count: { select: { proposals: true } } },
+      include: { company: true, images: { orderBy: { sortOrder: "asc" } }, _count: { select: { proposals: true } } },
     });
     ok(res, toProblemDetail(updated, updated._count.proposals));
+  })
+);
+
+/**
+ * @openapi
+ * /problems/{problemId}/images/{imageId}:
+ *   delete:
+ *     tags: [Problems]
+ *     summary: Muammo rasmini o'chirish (COMPANY egasi)
+ *     parameters:
+ *       - in: path
+ *         name: problemId
+ *         required: true
+ *         schema: { type: string }
+ *       - in: path
+ *         name: imageId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       204:
+ *         description: O'chirildi
+ */
+problemsRouter.delete(
+  "/problems/:problemId/images/:imageId",
+  requireAuth,
+  requireRole("ADMIN"),
+  asyncHandler(async (req, res) => {
+    await loadOwnedOpenProblem(req.params.problemId!, req.user!.id);
+    const image = await prisma.problemImage.findFirst({ where: { id: req.params.imageId, problemId: req.params.problemId } });
+    if (!image) throw AppError.notFound("Rasm topilmadi.");
+    await prisma.problemImage.delete({ where: { id: image.id } });
+    await fs.unlink(path.join(uploadPublicRoot, image.storedName)).catch(() => undefined);
+    res.status(204).send();
   })
 );
 
@@ -344,7 +426,9 @@ problemsRouter.delete(
     if (proposalCount > 0) {
       throw AppError.conflict("Takliflari mavjud muammoni o'chirib bo'lmaydi.");
     }
+    const images = await prisma.problemImage.findMany({ where: { problemId: existing.id } });
     await prisma.problem.update({ where: { id: existing.id }, data: { deletedAt: new Date() } });
+    await Promise.all(images.map((img) => fs.unlink(path.join(uploadPublicRoot, img.storedName)).catch(() => undefined)));
     res.status(204).send();
   })
 );
@@ -382,7 +466,7 @@ problemsRouter.post(
       return tx.problem.update({
         where: { id: existing.id },
         data: { status: "CLOSED", closedAt: new Date() },
-        include: { company: true, _count: { select: { proposals: true } } },
+        include: { company: true, images: { orderBy: { sortOrder: "asc" } }, _count: { select: { proposals: true } } },
       });
     });
 

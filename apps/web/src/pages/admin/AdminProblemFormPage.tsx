@@ -1,14 +1,22 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createProblemSchema, CATEGORY_LABELS_UZ, BUDGET_TYPE_LABELS_UZ, type CreateProblemInput } from "@buildscience/shared";
+import { X } from "lucide-react";
+import {
+  createProblemSchema,
+  CATEGORY_LABELS_UZ,
+  BUDGET_TYPE_LABELS_UZ,
+  GALLERY_UPLOAD,
+  type CreateProblemInput,
+} from "@buildscience/shared";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, LoadingSkeleton } from "@/components/ui/Card";
 import { FormField, Input, Textarea, Select, RadioGroup, CurrencyInput } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { GalleryUploader } from "@/components/ui/GalleryUploader";
+import { IconButton, Button } from "@/components/ui/Button";
 import { CategoryBadge } from "@/components/ui/Badge";
-import { useProblem, useCreateProblem, useUpdateProblem } from "@/features/problems/hooks";
+import { useProblem, useCreateProblem, useUpdateProblem, useDeleteProblemImage } from "@/features/problems/hooks";
 import { notify } from "@/components/ui/toast";
 import { ApiRequestError } from "@/lib/api";
 import { formatMoney } from "@/lib/format";
@@ -22,6 +30,8 @@ export default function AdminProblemFormPage() {
   const { data: existing, isLoading } = useProblem(problemId);
   const createMutation = useCreateProblem();
   const updateMutation = useUpdateProblem(problemId ?? "");
+  const deleteImageMutation = useDeleteProblemImage(problemId ?? "");
+  const [images, setImages] = useState<File[]>([]);
 
   const {
     register,
@@ -56,14 +66,23 @@ export default function AdminProblemFormPage() {
   async function onSubmit(values: CreateProblemInput) {
     try {
       if (isEdit) {
-        await updateMutation.mutateAsync(values);
+        await updateMutation.mutateAsync({ input: values, images });
         notify.success("O'zgarishlar saqlandi.");
         navigate(`/problems/${problemId}`);
       } else {
-        const created = await createMutation.mutateAsync(values);
+        const created = await createMutation.mutateAsync({ input: values, images });
         notify.success("Muammo joylashtirildi.");
         navigate(`/problems/${created.id}`);
       }
+    } catch (err) {
+      if (err instanceof ApiRequestError) notify.error(err.message);
+    }
+  }
+
+  async function removeExistingImage(imageId: string) {
+    try {
+      await deleteImageMutation.mutateAsync(imageId);
+      notify.success("Rasm o'chirildi.");
     } catch (err) {
       if (err instanceof ApiRequestError) notify.error(err.message);
     }
@@ -111,6 +130,33 @@ export default function AdminProblemFormPage() {
                 <CurrencyInput id="budgetAmount" value={budgetAmount ?? undefined} onValueChange={(v) => setValue("budgetAmount", v ?? null)} />
               </FormField>
             )}
+
+            {isEdit && existing && existing.images.length > 0 && (
+              <FormField label="Mavjud rasmlar">
+                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                  {existing.images.map((img) => (
+                    <div key={img.id} className="relative aspect-square overflow-hidden rounded-lg border border-surface-border">
+                      <img src={img.url} alt="" className="h-full w-full object-cover" />
+                      <IconButton
+                        label="Rasmni o'chirish"
+                        onClick={() => removeExistingImage(img.id)}
+                        className="absolute right-1 top-1 bg-white/90"
+                      >
+                        <X size={14} />
+                      </IconButton>
+                    </div>
+                  ))}
+                </div>
+              </FormField>
+            )}
+
+            <FormField label={isEdit ? "Yangi rasmlar qo'shish" : "Rasmlar"}>
+              <GalleryUploader
+                files={images}
+                onChange={setImages}
+                max={GALLERY_UPLOAD.MAX_IMAGES - (existing?.images.length ?? 0)}
+              />
+            </FormField>
 
             <div className="mt-2 flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={() => navigate(-1)}>

@@ -1,10 +1,15 @@
-import type { Problem, User } from "@prisma/client";
+import type { Problem, ProblemImage, User } from "@prisma/client";
 import type { ProblemDetail, ProblemListItem } from "@buildscience/shared";
+import { env } from "../../config/env.js";
 
-type ProblemWithCompany = Problem & { company: User; _count?: { proposals: number } };
+type ProblemWithCompany = Problem & { company: User; images: ProblemImage[]; _count?: { proposals: number } };
 
 function excerpt(text: string, length = 180) {
   return text.length > length ? `${text.slice(0, length).trim()}…` : text;
+}
+
+function imageUrl(storedName: string) {
+  return `${env.publicUploadBaseUrl}/${storedName}`;
 }
 
 export function toProblemListItem(problem: ProblemWithCompany, proposalCount: number): ProblemListItem {
@@ -18,6 +23,7 @@ export function toProblemListItem(problem: ProblemWithCompany, proposalCount: nu
     status: problem.status,
     companyName: problem.company.name,
     proposalCount,
+    coverImageUrl: problem.images[0] ? imageUrl(problem.images[0].storedName) : null,
     createdAt: problem.createdAt.toISOString(),
   };
 }
@@ -34,6 +40,8 @@ export function toProblemDetail(problem: ProblemWithCompany, proposalCount: numb
     status: problem.status,
     companyName: problem.company.name,
     proposalCount,
+    coverImageUrl: problem.images[0] ? imageUrl(problem.images[0].storedName) : null,
+    images: problem.images.map((img) => ({ id: img.id, url: imageUrl(img.storedName) })),
     createdAt: problem.createdAt.toISOString(),
     matchedAt: problem.matchedAt ? problem.matchedAt.toISOString() : null,
     closedAt: problem.closedAt ? problem.closedAt.toISOString() : null,

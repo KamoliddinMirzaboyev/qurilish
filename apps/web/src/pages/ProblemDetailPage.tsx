@@ -62,6 +62,15 @@ export default function ProblemDetailPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Card className="flex flex-col gap-4 lg:col-span-2">
+          {problem.images.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {problem.images.map((img) => (
+                <div key={img.id} className="aspect-square overflow-hidden rounded-lg bg-surface-muted">
+                  <img src={img.url} alt={problem.title} className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <CategoryBadge category={problem.category} />
             <ProblemStatusBadge status={problem.status} />

@@ -11,6 +11,11 @@ export function ProblemCard({ problem }: { problem: ProblemListItem }) {
 
   return (
     <Card className="flex flex-col gap-3 transition-shadow duration-150 hover:shadow-md">
+      {problem.coverImageUrl && (
+        <div className="aspect-video overflow-hidden rounded-lg bg-surface-muted">
+          <img src={problem.coverImageUrl} alt={problem.title} className="h-full w-full object-cover" />
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2">
         <CategoryBadge category={problem.category} />
         <ProblemStatusBadge status={problem.status} />

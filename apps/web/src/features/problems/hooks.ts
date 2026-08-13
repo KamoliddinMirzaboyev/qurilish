@@ -41,10 +41,22 @@ export function useProblem(problemId: string | undefined) {
   });
 }
 
+function toFormData(input: CreateProblemInput, images: File[]) {
+  const formData = new FormData();
+  formData.append("title", input.title);
+  formData.append("description", input.description);
+  formData.append("category", input.category);
+  formData.append("budgetType", input.budgetType);
+  if (input.budgetAmount != null) formData.append("budgetAmount", String(input.budgetAmount));
+  images.forEach((file) => formData.append("images", file));
+  return formData;
+}
+
 export function useCreateProblem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: CreateProblemInput) => api.post<ProblemDetail>("/problems", input),
+    mutationFn: ({ input, images }: { input: CreateProblemInput; images: File[] }) =>
+      api.postForm<ProblemDetail>("/problems", toFormData(input, images)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company-problems"] });
       queryClient.invalidateQueries({ queryKey: ["company-stats"] });
@@ -56,10 +68,22 @@ export function useCreateProblem() {
 export function useUpdateProblem(problemId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: CreateProblemInput) => api.patch<ProblemDetail>(`/problems/${problemId}`, input),
+    mutationFn: ({ input, images }: { input: CreateProblemInput; images: File[] }) =>
+      api.patchForm<ProblemDetail>(`/problems/${problemId}`, toFormData(input, images)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company-problems"] });
       queryClient.invalidateQueries({ queryKey: ["problem", problemId] });
+    },
+  });
+}
+
+export function useDeleteProblemImage(problemId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (imageId: string) => api.delete(`/problems/${problemId}/images/${imageId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["problem", problemId] });
+      queryClient.invalidateQueries({ queryKey: ["company-problems"] });
     },
   });
 }

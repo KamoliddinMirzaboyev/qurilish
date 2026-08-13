@@ -275,7 +275,11 @@ adminRouter.get(
         orderBy: { createdAt: sortOrder(req) },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { company: true, _count: { select: { proposals: { where: { deletedAt: null } } } } },
+        include: {
+          company: true,
+          images: { orderBy: { sortOrder: "asc" } },
+          _count: { select: { proposals: { where: { deletedAt: null } } } },
+        },
       }),
       prisma.problem.count({ where }),
     ]);

@@ -45,6 +45,7 @@ export interface ProblemListItem {
   status: ProblemStatus;
   companyName: string;
   proposalCount: number;
+  coverImageUrl: string | null;
   createdAt: string;
 }
 
@@ -53,6 +54,7 @@ export interface ProblemDetail extends Omit<ProblemListItem, "descriptionExcerpt
   companyId: string;
   matchedAt: string | null;
   closedAt: string | null;
+  images: GalleryImage[];
 }
 
 export interface ProposalListItem {
