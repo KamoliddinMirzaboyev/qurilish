@@ -8,7 +8,8 @@ import { SearchInput, FilterBar } from "@/components/ui/SearchInput";
 import { Select } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { UserAvatar } from "@/components/ui/Avatar";
-import { EmptyState, LoadingSkeleton } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/Card";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { IconButton } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
 import { ConfirmationDialog, Modal } from "@/components/ui/Modal";
@@ -92,11 +93,7 @@ export default function SuperAdminUsersPage() {
       </FilterBar>
 
       {isLoading ? (
-        <div className="flex flex-col gap-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <LoadingSkeleton key={i} className="h-16 w-full rounded-card" />
-          ))}
-        </div>
+        <ListSkeleton count={6} />
       ) : data && data.items.length > 0 ? (
         <div className="overflow-hidden rounded-card border border-surface-border bg-white">
           <div className="overflow-x-auto">

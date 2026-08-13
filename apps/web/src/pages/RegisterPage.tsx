@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterInput, type AuthUser } from "@buildscience/shared";
 import { FormField, Input, PasswordInput, PhoneInput } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { useAuth } from "@/features/auth/AuthContext";
 import { api, ApiRequestError } from "@/lib/api";
 import { dashboardPathForRole } from "@/routes/paths";
@@ -27,6 +28,7 @@ export default function RegisterPage() {
     try {
       const user = await api.post<AuthUser>("/auth/register", values);
       setUser(user);
+      notify.success("Ro'yxatdan o'tildi.");
       navigate(dashboardPathForRole(user.role));
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -41,14 +43,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-16">
-      <div>
-        <h1 className="text-2xl font-semibold text-brand-dark">Ro'yxatdan o'tish</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Firma (ADMIN) akkauntlari faqat hokimiyat tomonidan yaratiladi — bu yerda oddiy foydalanuvchi sifatida
-          ro'yxatdan o'tasiz.
-        </p>
-      </div>
+    <Modal open title="Ro'yxatdan o'tish" onClose={() => navigate("/")}>
+      <p className="-mt-2 mb-4 text-sm text-ink-muted">
+        Firma (ADMIN) akkauntlari faqat hokimiyat tomonidan yaratiladi — bu yerda oddiy foydalanuvchi sifatida
+        ro'yxatdan o'tasiz.
+      </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <FormField label="F.I.Sh." required error={errors.name?.message} htmlFor="name">
@@ -83,12 +82,12 @@ export default function RegisterPage() {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-ink-muted">
+      <p className="mt-4 text-center text-sm text-ink-muted">
         Akkauntingiz bormi?{" "}
         <Link to="/login" className="font-medium text-brand-primary">
           Kirish
         </Link>
       </p>
-    </div>
+    </Modal>
   );
 }

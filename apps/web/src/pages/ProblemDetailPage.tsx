@@ -6,7 +6,8 @@ import { useProblem, useCloseProblem } from "@/features/problems/hooks";
 import { useMyProposals } from "@/features/proposals/hooks";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { CategoryBadge, ProblemStatusBadge } from "@/components/ui/Badge";
-import { Card, ErrorState, LoadingSkeleton } from "@/components/ui/Card";
+import { Card, ErrorState } from "@/components/ui/Card";
+import { DetailSkeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { ConfirmationDialog } from "@/components/ui/Modal";
 import { ProposalFormModal } from "@/components/proposals/ProposalFormModal";
@@ -27,12 +28,7 @@ export default function ProblemDetailPage() {
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
 
   if (isLoading) {
-    return (
-      <div className="mx-auto max-w-content px-4 py-10">
-        <LoadingSkeleton className="h-8 w-2/3" />
-        <LoadingSkeleton className="mt-4 h-40 w-full" />
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (isError || !problem) {

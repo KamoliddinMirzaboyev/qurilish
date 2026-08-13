@@ -17,6 +17,7 @@ import { minesRouter } from "./modules/mines/mines.routes.js";
 import { wasteRouter } from "./modules/waste/waste.routes.js";
 import { connectionsRouter } from "./modules/connections/connections.routes.js";
 import { adminRouter } from "./modules/admin/admin.routes.js";
+import { notificationsRouter } from "./modules/notifications/notifications.routes.js";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
 
@@ -57,6 +58,7 @@ app.use("/api", proposalsRouter);
 app.use("/api", minesRouter);
 app.use("/api", wasteRouter);
 app.use("/api/connections", connectionsRouter);
+app.use("/api/notifications", notificationsRouter);
 app.use("/api/admin", adminRouter);
 
 app.use(notFoundHandler);

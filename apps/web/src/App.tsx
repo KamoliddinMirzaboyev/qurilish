@@ -1,5 +1,5 @@
-import { lazy } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { MotionConfig } from "motion/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -44,16 +44,32 @@ const SuperAdminMinesPage = lazy(() => import("@/pages/superadmin/SuperAdminMine
 const SuperAdminMineFormPage = lazy(() => import("@/pages/superadmin/SuperAdminMineFormPage"));
 const SuperAdminWastePage = lazy(() => import("@/pages/superadmin/SuperAdminWastePage"));
 
+function LandingWithAuthModal() {
+  return (
+    <>
+      <LandingPage />
+      <Suspense fallback={null}>
+        <Outlet />
+      </Suspense>
+    </>
+  );
+}
+
 export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
-            <Toaster position="top-center" />
+            <Toaster position="top-right" richColors closeButton />
             <Routes>
                 <Route element={<PublicLayout />}>
-                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/" element={<LandingWithAuthModal />}>
+                    <Route element={<RequireGuest />}>
+                      <Route path="login" element={<LoginPage />} />
+                      <Route path="register" element={<RegisterPage />} />
+                    </Route>
+                  </Route>
                   <Route path="/problems" element={<ProblemsListPage />} />
                   <Route path="/problems/:problemId" element={<ProblemDetailPage />} />
                   <Route path="/mines" element={<MinesListPage />} />
@@ -62,11 +78,6 @@ export default function App() {
                   <Route path="/waste/:wasteId" element={<WasteDetailPage />} />
                   <Route path="/forbidden" element={<ForbiddenPage />} />
                   <Route path="*" element={<NotFoundPage />} />
-
-                  <Route element={<RequireGuest />}>
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                  </Route>
                 </Route>
 
                 <Route element={<RequireAuth />}>

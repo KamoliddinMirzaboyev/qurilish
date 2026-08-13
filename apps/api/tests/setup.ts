@@ -15,6 +15,7 @@ if (!process.env.DATABASE_URL?.includes("_test")) {
 const { prisma } = await import("../src/services/prisma.js");
 
 beforeEach(async () => {
+  await prisma.notification.deleteMany({});
   await prisma.proposal.deleteMany({});
   await prisma.problem.deleteMany({});
   await prisma.mineImage.deleteMany({});

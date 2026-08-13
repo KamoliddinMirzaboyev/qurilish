@@ -11,7 +11,7 @@ describe("AdminProblemFormPage", () => {
 
     await user.type(screen.getByLabelText(/muammo sarlavhasi/i), "qisqa");
     await user.type(screen.getByLabelText(/muammo tavsifi/i), "x".repeat(60));
-    await user.click(screen.getByRole("button", { name: /e'lonni joylashtirish/i }));
+    await user.click(screen.getByRole("button", { name: /joylashtirish/i }));
 
     expect(await screen.findByText(/sarlavha kamida 10 ta belgidan iborat bo'lishi kerak/i)).toBeInTheDocument();
   });

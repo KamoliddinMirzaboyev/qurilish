@@ -2,19 +2,16 @@ import { useParams } from "react-router-dom";
 import { MapPin } from "lucide-react";
 import { useMine } from "@/features/mines/hooks";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
-import { Card, ErrorState, LoadingSkeleton } from "@/components/ui/Card";
+import { Card, ErrorState } from "@/components/ui/Card";
+import { DetailSkeleton } from "@/components/ui/Skeleton";
+import { ImageSlider } from "@/components/ui/ImageSlider";
 
 export default function MineDetailPage() {
   const { mineId } = useParams();
   const { data: mine, isLoading, isError, refetch } = useMine(mineId);
 
   if (isLoading) {
-    return (
-      <div className="mx-auto max-w-content px-4 py-10">
-        <LoadingSkeleton className="h-8 w-2/3" />
-        <LoadingSkeleton className="mt-4 h-64 w-full" />
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (isError || !mine) {
@@ -31,19 +28,12 @@ export default function MineDetailPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
-          {mine.images.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {mine.images.map((img) => (
-                <div key={img.id} className="aspect-square overflow-hidden rounded-lg bg-surface-muted">
-                  <img src={img.url} alt={mine.name} className="h-full w-full object-cover" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex aspect-video items-center justify-center rounded-lg bg-surface-muted text-sm text-ink-muted">
-              Rasm yo'q
-            </div>
-          )}
+          <ImageSlider
+            images={(mine.images ?? []).map((img) => img.url)}
+            alt={mine.name}
+            thumbs
+            className="aspect-[16/10] min-h-[240px] rounded-lg sm:min-h-[360px]"
+          />
 
           <Card className="flex flex-col gap-3">
             <h1 className="text-2xl font-semibold text-brand-dark">{mine.name}</h1>

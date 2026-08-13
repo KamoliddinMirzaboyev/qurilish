@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { useCompanyProposals } from "@/features/proposals/hooks";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Tabs } from "@/components/ui/Tabs";
-import { EmptyState, CardGridSkeleton } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/Card";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { Pagination } from "@/components/ui/Pagination";
 import { ProposalCard } from "@/components/proposals/ProposalCard";
 
@@ -33,7 +34,7 @@ export default function AdminProposalsPage() {
       />
 
       {isLoading ? (
-        <CardGridSkeleton count={4} />
+        <ListSkeleton count={4} />
       ) : data && data.items.length > 0 ? (
         <div className="flex flex-col gap-4">
           {data.items.map((proposal) => (

@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
+import { X, Save, Ban } from "lucide-react";
 import { mineSchema, GALLERY_UPLOAD, type MineInput } from "@buildscience/shared";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, LoadingSkeleton } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
+import { FormSkeleton } from "@/components/ui/Skeleton";
 import { FormField, Input, Textarea } from "@/components/ui/Input";
 import { GalleryUploader } from "@/components/ui/GalleryUploader";
 import { IconButton, Button } from "@/components/ui/Button";
@@ -76,15 +77,15 @@ export default function SuperAdminMineFormPage() {
   }
 
   if (isEdit && isLoading) {
-    return <LoadingSkeleton className="h-96 w-full" />;
+    return <FormSkeleton />;
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex max-w-3xl flex-col gap-4">
       <PageHeader title={isEdit ? "Konni tahrirlash" : "Yangi kon joylashtirish"} />
 
-      <Card className="max-w-2xl">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <Card>
+        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 sm:grid-cols-2">
           <FormField label="Kon nomi" required error={errors.name?.message} htmlFor="name">
             <Input id="name" placeholder="Masalan: Qibray Toshkoni" {...register("name")} />
           </FormField>
@@ -101,14 +102,16 @@ export default function SuperAdminMineFormPage() {
             <Input id="volume" placeholder="Masalan: 500 000 m³" {...register("volume")} />
           </FormField>
 
+          <div className="sm:col-span-2">
           <FormField label="Tavsif" error={errors.description?.message} htmlFor="description">
-            <Textarea id="description" className="min-h-[140px]" {...register("description")} />
+            <Textarea id="description" className="min-h-[100px]" {...register("description")} />
           </FormField>
+          </div>
 
-          {isEdit && existing && existing.images.length > 0 && (
-            <FormField label="Mavjud rasmlar">
+          {isEdit && existing && (existing.images?.length ?? 0) > 0 && (
+            <FormField label="Mavjud rasmlar" className="sm:col-span-2">
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                {existing.images.map((img) => (
+                {(existing.images ?? []).map((img) => (
                   <div key={img.id} className="relative aspect-square overflow-hidden rounded-lg border border-surface-border">
                     <img src={img.url} alt="" className="h-full w-full object-cover" />
                     <IconButton
@@ -124,20 +127,20 @@ export default function SuperAdminMineFormPage() {
             </FormField>
           )}
 
-          <FormField label={isEdit ? "Yangi rasmlar qo'shish" : "Rasmlar"}>
+          <FormField label={isEdit ? "Yangi rasmlar qo'shish" : "Rasmlar"} className="sm:col-span-2">
             <GalleryUploader
               files={images}
               onChange={setImages}
-              max={GALLERY_UPLOAD.MAX_IMAGES - (existing?.images.length ?? 0)}
+              max={GALLERY_UPLOAD.MAX_IMAGES - (existing?.images?.length ?? 0)}
             />
           </FormField>
 
-          <div className="mt-2 flex justify-end gap-3">
+          <div className="mt-1 flex justify-end gap-3 sm:col-span-2">
             <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-              Bekor qilish
+              <Ban size={16} /> Bekor qilish
             </Button>
             <Button type="submit" isLoading={isSubmitting}>
-              {isEdit ? "Saqlash" : "Joylashtirish"}
+              <Save size={16} /> {isEdit ? "Saqlash" : "Joylashtirish"}
             </Button>
           </div>
         </form>

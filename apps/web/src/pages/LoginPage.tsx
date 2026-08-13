@@ -5,6 +5,7 @@ import { loginSchema, type LoginInput, type AuthUser } from "@buildscience/share
 import { FormField } from "@/components/ui/Input";
 import { Input, PasswordInput } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { useAuth } from "@/features/auth/AuthContext";
 import { api, ApiRequestError } from "@/lib/api";
 import { dashboardPathForRole } from "@/routes/paths";
@@ -25,6 +26,7 @@ export default function LoginPage() {
     try {
       const user = await api.post<AuthUser>("/auth/login", values);
       setUser(user);
+      notify.success("Tizimga kirdingiz.");
       const from = (location.state as { from?: string } | null)?.from;
       navigate(from ?? dashboardPathForRole(user.role));
     } catch (err) {
@@ -36,13 +38,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-16">
-      <div>
-        <h1 className="text-2xl font-semibold text-brand-dark">Kirish</h1>
-        <p className="mt-2 text-sm text-ink-muted">
-          Kontakt ma'lumotlaringiz taklif qabul qilinmaguncha boshqa foydalanuvchilarga ko'rsatilmaydi.
-        </p>
-      </div>
+    <Modal open title="Kirish" onClose={() => navigate("/")}>
+      <p className="-mt-2 mb-4 text-sm text-ink-muted">
+        Kontakt ma'lumotlaringiz taklif qabul qilinmaguncha boshqa foydalanuvchilarga ko'rsatilmaydi.
+      </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <FormField label="Email yoki Login" required error={errors.email?.message} htmlFor="email">
@@ -59,12 +58,12 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-ink-muted">
+      <p className="mt-4 text-center text-sm text-ink-muted">
         Akkauntingiz yo'qmi?{" "}
         <Link to="/register" className="font-medium text-brand-primary">
           Ro'yxatdan o'tish
         </Link>
       </p>
-    </div>
+    </Modal>
   );
 }

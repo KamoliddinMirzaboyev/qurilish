@@ -57,21 +57,4 @@ export function ErrorState({ title = "Ma'lumotlarni yuklashda xatolik yuz berdi.
   );
 }
 
-export function LoadingSkeleton({ className }: { className?: string }) {
-  return <div className={clsx("animate-pulse rounded-lg bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 bg-[length:200%_100%] [animation:shimmer_1.5s_ease-in-out_infinite]", className)} />;
-}
-
-export function CardGridSkeleton({ count = 6 }: { count?: number }) {
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: count }).map((_, i) => (
-        <Card key={i} className="flex flex-col gap-3">
-          <LoadingSkeleton className="h-4 w-20" />
-          <LoadingSkeleton className="h-5 w-full" />
-          <LoadingSkeleton className="h-4 w-2/3" />
-          <LoadingSkeleton className="h-10 w-full" />
-        </Card>
-      ))}
-    </div>
-  );
-}
+export { Skeleton as LoadingSkeleton, CardGridSkeleton } from "./Skeleton";

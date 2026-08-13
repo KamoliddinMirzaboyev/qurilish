@@ -1,17 +1,16 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil, ListChecks, Eye, Handshake } from "lucide-react";
 import { useCompanyProblems, useDeleteProblem } from "@/features/problems/hooks";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Tabs } from "@/components/ui/Tabs";
-import { Card, EmptyState, CardGridSkeleton } from "@/components/ui/Card";
+import { EmptyState, CardGridSkeleton } from "@/components/ui/Card";
 import { Button, IconButton } from "@/components/ui/Button";
-import { ProblemStatusBadge } from "@/components/ui/Badge";
 import { ConfirmationDialog } from "@/components/ui/Modal";
 import { Pagination } from "@/components/ui/Pagination";
+import { ProblemCard } from "@/components/problems/ProblemCard";
 import { notify } from "@/components/ui/toast";
 import { ApiRequestError } from "@/lib/api";
-import { formatMoney, formatProposalCount, formatDate } from "@/lib/format";
 
 const tabs = [
   { value: "ALL", label: "Barchasi" },
@@ -40,9 +39,10 @@ export default function AdminProblemsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader
         title="Muammolarim"
+        subtitle={data ? `${data.total} ta muammo` : undefined}
         action={
           <Button asLink to="/app/admin/problems/new">
             <Plus size={16} /> Yangi muammo
@@ -60,49 +60,47 @@ export default function AdminProblemsPage() {
       />
 
       {isLoading ? (
-        <CardGridSkeleton count={4} />
+        <CardGridSkeleton count={6} />
       ) : data && data.items.length > 0 ? (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.items.map((problem) => (
-            <Card key={problem.id} className="flex flex-wrap items-center justify-between gap-4">
-              <div className="min-w-[220px] flex-1">
-                <div className="mb-1 flex items-center gap-2">
-                  <ProblemStatusBadge status={problem.status} />
-                </div>
-                <Link to={`/problems/${problem.id}`} className="font-medium text-brand-dark hover:text-brand-primary">
-                  {problem.title}
-                </Link>
-                <p className="mt-1 text-sm text-ink-muted">
-                  {formatMoney(problem.budgetAmount)} · {formatProposalCount(problem.proposalCount)} · {formatDate(problem.createdAt)}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {problem.status === "OPEN" && (
-                  <>
-                    <Link to={`/app/admin/problems/${problem.id}/edit`} className="text-sm font-medium text-brand-primary">
-                      Tahrirlash
+            <ProblemCard
+              key={problem.id}
+              problem={problem}
+              actions={
+                <div className="flex flex-wrap items-center gap-2">
+                  {problem.status === "OPEN" && (
+                    <>
+                      <Link
+                        to={`/app/admin/problems/${problem.id}/edit`}
+                        className="inline-flex items-center gap-1 text-sm font-medium text-brand-primary hover:text-brand-primaryHover"
+                      >
+                        <Pencil size={14} /> Tahrirlash
+                      </Link>
+                      <Link
+                        to={`/app/admin/problems/${problem.id}/proposals`}
+                        className="inline-flex items-center gap-1 text-sm font-medium text-brand-primary hover:text-brand-primaryHover"
+                      >
+                        <ListChecks size={14} /> Takliflar
+                      </Link>
+                      {problem.proposalCount === 0 && (
+                        <IconButton label="O'chirish" onClick={() => setDeleteTarget(problem.id)} className="ml-auto text-danger hover:bg-red-50">
+                          <Trash2 size={16} />
+                        </IconButton>
+                      )}
+                    </>
+                  )}
+                  {problem.status === "MATCHED" && (
+                    <Link to="/app/connections" className="inline-flex items-center gap-1 text-sm font-medium text-brand-primary">
+                      <Handshake size={14} /> Bog'lanish
                     </Link>
-                    <Link to={`/app/admin/problems/${problem.id}/proposals`} className="text-sm font-medium text-brand-primary">
-                      Takliflar
-                    </Link>
-                    {problem.proposalCount === 0 && (
-                      <IconButton label="O'chirish" onClick={() => setDeleteTarget(problem.id)}>
-                        <Trash2 size={16} className="text-danger" />
-                      </IconButton>
-                    )}
-                  </>
-                )}
-                {problem.status === "MATCHED" && (
-                  <Link to="/app/connections" className="text-sm font-medium text-brand-primary">
-                    Bog'lanishni ko'rish
+                  )}
+                  <Link to={`/problems/${problem.id}`} className="inline-flex items-center gap-1 text-sm font-medium text-ink-muted hover:text-ink">
+                    <Eye size={14} /> Ko'rish
                   </Link>
-                )}
-                <Link to={`/problems/${problem.id}`} className="text-sm font-medium text-ink-muted">
-                  Ko'rish
-                </Link>
-              </div>
-            </Card>
+                </div>
+              }
+            />
           ))}
         </div>
       ) : (

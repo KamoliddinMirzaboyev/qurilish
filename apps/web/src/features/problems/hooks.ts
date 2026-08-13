@@ -43,6 +43,14 @@ export function useProblem(problemId: string | undefined) {
 
 function toFormData(input: CreateProblemInput, images: File[]) {
   const formData = new FormData();
+  const payload = {
+    title: input.title,
+    description: input.description,
+    category: input.category,
+    budgetType: input.budgetType,
+    budgetAmount: input.budgetAmount ?? null,
+  };
+  formData.append("payload", JSON.stringify(payload));
   formData.append("title", input.title);
   formData.append("description", input.description);
   formData.append("category", input.category);
@@ -52,13 +60,22 @@ function toFormData(input: CreateProblemInput, images: File[]) {
   return formData;
 }
 
+function normalizeProblemInput(input: CreateProblemInput): CreateProblemInput {
+  return {
+    ...input,
+    budgetAmount: input.budgetType === "NEGOTIABLE" ? null : input.budgetAmount ?? null,
+  };
+}
+
 export function useCreateProblem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ input, images }: { input: CreateProblemInput; images: File[] }) =>
-      images.length > 0
-        ? api.postForm<ProblemDetail>("/problems", toFormData(input, images))
-        : api.post<ProblemDetail>("/problems", input),
+    mutationFn: ({ input, images }: { input: CreateProblemInput; images: File[] }) => {
+      const body = normalizeProblemInput(input);
+      return images.length > 0
+        ? api.postForm<ProblemDetail>("/problems", toFormData(body, images))
+        : api.post<ProblemDetail>("/problems", body);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company-problems"] });
       queryClient.invalidateQueries({ queryKey: ["company-stats"] });
@@ -67,15 +84,19 @@ export function useCreateProblem() {
   });
 }
 
-export function useUpdateProblem(problemId: string) {
+export function useUpdateProblem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ input, images }: { input: CreateProblemInput; images: File[] }) =>
-      images.length > 0
-        ? api.patchForm<ProblemDetail>(`/problems/${problemId}`, toFormData(input, images))
-        : api.patch<ProblemDetail>(`/problems/${problemId}`, input),
-    onSuccess: () => {
+    mutationFn: ({ problemId, input, images }: { problemId: string; input: CreateProblemInput; images: File[] }) => {
+      const body = normalizeProblemInput(input);
+      return images.length > 0
+        ? api.patchForm<ProblemDetail>(`/problems/${problemId}`, toFormData(body, images))
+        : api.patch<ProblemDetail>(`/problems/${problemId}`, body);
+    },
+    onSuccess: (_data, { problemId }) => {
       queryClient.invalidateQueries({ queryKey: ["company-problems"] });
+      queryClient.invalidateQueries({ queryKey: ["company-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["problems"] });
       queryClient.invalidateQueries({ queryKey: ["problem", problemId] });
     },
   });

@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createAdminSchema, type CreateAdminInput } from "@buildscience/shared";
 import { useAdminUsers, useCreateAdmin } from "@/features/admin/hooks";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, EmptyState, CardGridSkeleton } from "@/components/ui/Card";
+import { Card, EmptyState } from "@/components/ui/Card";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { FormField, Input, PasswordInput, PhoneInput } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { notify } from "@/components/ui/toast";
@@ -42,10 +43,11 @@ export default function SuperAdminAdminsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader title="Firmalar (ADMIN)" subtitle="Qurilish firmalari akkauntlari faqat shu yerdan yaratiladi." />
 
-      <Card className="max-w-xl">
+      <div className="grid gap-4 lg:grid-cols-2">
+      <Card>
         <h2 className="mb-4 font-semibold text-brand-dark">Yangi firma qo'shish</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <FormField label="Firma nomi" required error={errors.name?.message} htmlFor="name">
@@ -72,7 +74,7 @@ export default function SuperAdminAdminsPage() {
       <div>
         <h2 className="mb-3 font-semibold text-brand-dark">Mavjud firmalar</h2>
         {isLoading ? (
-          <CardGridSkeleton count={3} />
+          <ListSkeleton count={4} />
         ) : data && data.items.length > 0 ? (
           <div className="flex flex-col gap-3">
             {data.items.map((admin) => (
@@ -90,6 +92,7 @@ export default function SuperAdminAdminsPage() {
         ) : (
           <EmptyState title="Hozircha firma akkauntlari yo'q." />
         )}
+      </div>
       </div>
     </div>
   );

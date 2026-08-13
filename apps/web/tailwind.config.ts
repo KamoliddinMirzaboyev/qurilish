@@ -7,8 +7,8 @@ export default {
       colors: {
         brand: {
           dark: "#0F172A",
-          primary: "#155E95",
-          primaryHover: "#0F4C7A",
+          primary: "#075985",
+          primaryHover: "#0C4A6E",
           teal: "#0F766E",
           amber: "#D97706",
         },
@@ -28,7 +28,7 @@ export default {
         },
         ink: {
           DEFAULT: "#0F172A",
-          muted: "#64748B",
+          muted: "#475569",
         },
         danger: "#DC2626",
       },

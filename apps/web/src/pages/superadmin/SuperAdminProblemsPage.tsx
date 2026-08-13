@@ -1,19 +1,19 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Eye, Trash2 } from "lucide-react";
 import { CATEGORY_LABELS_UZ, PROBLEM_STATUS_LABELS_UZ, type ProblemListItem } from "@buildscience/shared";
 import { useAdminProblems, useDeleteAdminProblem } from "@/features/admin/hooks";
 import { useDebounce } from "@/hooks/useDebounce";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput, FilterBar } from "@/components/ui/SearchInput";
 import { Select } from "@/components/ui/Input";
-import { Card, EmptyState, CardGridSkeleton } from "@/components/ui/Card";
-import { ProblemStatusBadge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { EmptyState, CardGridSkeleton } from "@/components/ui/Card";
+import { IconButton } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
 import { ConfirmationDialog } from "@/components/ui/Modal";
+import { ProblemCard } from "@/components/problems/ProblemCard";
 import { notify } from "@/components/ui/toast";
 import { ApiRequestError } from "@/lib/api";
-import { formatDate, formatMoney, formatProposalCount } from "@/lib/format";
 
 const sortOptions = [
   { value: "newest", label: "Eng yangi" },
@@ -45,8 +45,8 @@ export default function SuperAdminProblemsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Muammolar" />
+    <div className="flex flex-col gap-4">
+      <PageHeader title="Muammolar" subtitle={data ? `${data.total} ta muammo` : undefined} />
 
       <FilterBar>
         <div className="min-w-[220px] flex-1">
@@ -68,28 +68,25 @@ export default function SuperAdminProblemsPage() {
       {isLoading ? (
         <CardGridSkeleton count={4} />
       ) : data && data.items.length > 0 ? (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.items.map((problem) => (
-            <Card key={problem.id} className="flex flex-wrap items-center justify-between gap-4">
-              <div className="min-w-[220px] flex-1">
-                <div className="mb-1">
-                  <ProblemStatusBadge status={problem.status} />
+            <ProblemCard
+              key={problem.id}
+              problem={problem}
+              actions={
+                <div className="flex items-center justify-between gap-2">
+                  <Link
+                    to={`/problems/${problem.id}`}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-primary hover:text-brand-primaryHover"
+                  >
+                    <Eye size={16} /> Ko'rish
+                  </Link>
+                  <IconButton label="O'chirish" onClick={() => setDeleteTarget(problem)} className="text-danger hover:bg-red-50">
+                    <Trash2 size={16} />
+                  </IconButton>
                 </div>
-                <p className="font-medium text-brand-dark">{problem.title}</p>
-                <p className="text-sm text-ink-muted">
-                  {problem.companyName} · {formatMoney(problem.budgetAmount)} · {formatProposalCount(problem.proposalCount)} ·{" "}
-                  {formatDate(problem.createdAt)}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Link to={`/problems/${problem.id}`} className="text-sm font-medium text-brand-primary">
-                  Ko'rish
-                </Link>
-                <Button size="sm" variant="danger" onClick={() => setDeleteTarget(problem)}>
-                  O'chirish
-                </Button>
-              </div>
-            </Card>
+              }
+            />
           ))}
         </div>
       ) : (

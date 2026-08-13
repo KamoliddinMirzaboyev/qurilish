@@ -2,19 +2,15 @@ import { useParams } from "react-router-dom";
 import { Factory } from "lucide-react";
 import { useWaste } from "@/features/waste/hooks";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
-import { Card, ErrorState, LoadingSkeleton } from "@/components/ui/Card";
+import { Card, ErrorState } from "@/components/ui/Card";
+import { DetailSkeleton } from "@/components/ui/Skeleton";
 
 export default function WasteDetailPage() {
   const { wasteId } = useParams();
   const { data: waste, isLoading, isError, refetch } = useWaste(wasteId);
 
   if (isLoading) {
-    return (
-      <div className="mx-auto max-w-content px-4 py-10">
-        <LoadingSkeleton className="h-8 w-2/3" />
-        <LoadingSkeleton className="mt-4 h-64 w-full" />
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (isError || !waste) {
@@ -31,9 +27,9 @@ export default function WasteDetailPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
-          {waste.images.length > 0 ? (
+          {(waste.images ?? []).length > 0 ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {waste.images.map((img) => (
+              {(waste.images ?? []).map((img) => (
                 <div key={img.id} className="aspect-square overflow-hidden rounded-lg bg-surface-muted">
                   <img src={img.url} alt={waste.factoryName} className="h-full w-full object-cover" />
                 </div>

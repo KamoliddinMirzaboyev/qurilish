@@ -76,7 +76,32 @@ const uploadGalleryImages = multer({
   limits: { fileSize: GALLERY_UPLOAD.MAX_SIZE_MB * 1024 * 1024 },
 }).array("images", GALLERY_UPLOAD.MAX_IMAGES);
 
+function flattenMultipartBody(req: import("express").Request) {
+  const body = req.body as Record<string, unknown> | undefined;
+  if (!body || typeof body !== "object") return;
+
+  const payload = body.payload;
+  if (typeof payload === "string") {
+    try {
+      const parsed = JSON.parse(payload) as Record<string, unknown>;
+      Object.assign(body, parsed);
+    } catch {
+      // ignore malformed payload — zod will reject
+    }
+    delete body.payload;
+  }
+
+  for (const [key, value] of Object.entries(body)) {
+    if (Array.isArray(value) && value.length === 1) body[key] = value[0];
+  }
+}
+
 export function handleGalleryUpload(req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) {
+  const contentType = req.headers["content-type"] ?? "";
+  if (!contentType.includes("multipart/form-data")) {
+    return next();
+  }
+
   uploadGalleryImages(req, res, (err: unknown) => {
     if (err) {
       if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
@@ -90,6 +115,7 @@ export function handleGalleryUpload(req: import("express").Request, res: import(
       }
       return next(err);
     }
+    flattenMultipartBody(req);
     next();
   });
 }

@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
+import { X, Save, Ban, Factory, ImageIcon } from "lucide-react";
 import { wasteSchema, GALLERY_UPLOAD, type WasteInput } from "@buildscience/shared";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, LoadingSkeleton } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
+import { FormSkeleton } from "@/components/ui/Skeleton";
 import { FormField, Input, Textarea } from "@/components/ui/Input";
 import { GalleryUploader } from "@/components/ui/GalleryUploader";
 import { IconButton, Button } from "@/components/ui/Button";
@@ -28,8 +29,11 @@ export default function AdminWasteFormPage() {
     handleSubmit,
     reset,
     setError,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<WasteInput>({ resolver: zodResolver(wasteSchema) });
+
+  const factoryName = watch("factoryName");
 
   useEffect(() => {
     if (existing) {
@@ -48,11 +52,11 @@ export default function AdminWasteFormPage() {
       if (isEdit) {
         await updateMutation.mutateAsync({ input: values, images });
         notify.success("O'zgarishlar saqlandi.");
-        navigate(`/waste/${wasteId}`);
+        navigate("/app/admin/waste");
       } else {
-        const created = await createMutation.mutateAsync({ input: values, images });
+        await createMutation.mutateAsync({ input: values, images });
         notify.success("Chiqindi e'loni joylashtirildi.");
-        navigate(`/waste/${created.id}`);
+        navigate("/app/admin/waste");
       }
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -76,39 +80,58 @@ export default function AdminWasteFormPage() {
   }
 
   if (isEdit && isLoading) {
-    return <LoadingSkeleton className="h-96 w-full" />;
+    return <FormSkeleton />;
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title={isEdit ? "Chiqindi e'lonini tahrirlash" : "Yangi chiqindi e'loni"} />
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        title={isEdit ? "Chiqindi e'lonini tahrirlash" : "Yangi chiqindi e'loni"}
+        subtitle="Zavod chiqindisi haqidagi asosiy ma'lumot va rasmlarni kiriting."
+      />
 
-      <Card className="max-w-2xl">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <FormField label="Zavod nomi" required error={errors.factoryName?.message} htmlFor="factoryName">
-            <Input id="factoryName" {...register("factoryName")} />
-          </FormField>
+      <form onSubmit={handleSubmit(onSubmit)} className="grid items-start gap-4 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-ink">
+            <Factory size={16} className="text-brand-primary" />
+            Asosiy ma'lumot
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField label="Zavod nomi" required error={errors.factoryName?.message} htmlFor="factoryName" className="sm:col-span-2">
+              <Input id="factoryName" placeholder="Masalan: BetonStroy zavodi" {...register("factoryName")} />
+            </FormField>
 
-          <FormField label="Tarkibi" required error={errors.composition?.message} htmlFor="composition">
-            <Textarea id="composition" className="min-h-[100px]" {...register("composition")} />
-          </FormField>
+            <FormField label="Hajmi" required error={errors.volume?.message} htmlFor="volume">
+              <Input id="volume" placeholder="40 tonna/oy" {...register("volume")} />
+            </FormField>
 
-          <FormField label="Hajmi" required error={errors.volume?.message} htmlFor="volume">
-            <Input id="volume" placeholder="Masalan: 40 tonna/oy" {...register("volume")} />
-          </FormField>
+            <FormField label="Yillik hajmi" required error={errors.annualVolume?.message} htmlFor="annualVolume">
+              <Input id="annualVolume" placeholder="480 tonna/yil" {...register("annualVolume")} />
+            </FormField>
 
-          <FormField label="Yillik hajmi" required error={errors.annualVolume?.message} htmlFor="annualVolume">
-            <Input id="annualVolume" placeholder="Masalan: 480 tonna/yil" {...register("annualVolume")} />
-          </FormField>
+            <FormField label="Tarkibi" required error={errors.composition?.message} htmlFor="composition" className="sm:col-span-2">
+              <Textarea id="composition" className="min-h-[88px]" placeholder="Chiqindi tarkibi: beton qoldig'i, shlak..." {...register("composition")} />
+            </FormField>
 
-          <FormField label="Qo'shimcha ma'lumot" error={errors.description?.message} htmlFor="description">
-            <Textarea id="description" className="min-h-[100px]" {...register("description")} />
-          </FormField>
+            <FormField label="Qo'shimcha ma'lumot" error={errors.description?.message} htmlFor="description" className="sm:col-span-2">
+              <Textarea id="description" className="min-h-[72px]" placeholder="Ixtiyoriy izoh" {...register("description")} />
+            </FormField>
+          </div>
+        </Card>
 
-          {isEdit && existing && existing.images.length > 0 && (
-            <FormField label="Mavjud rasmlar">
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                {existing.images.map((img) => (
+        <Card className="lg:col-span-2">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-ink">
+            <ImageIcon size={16} className="text-brand-primary" />
+            Rasmlar
+          </div>
+          <p className="mb-3 text-xs text-ink-muted">
+            {factoryName?.trim() || "Zavod"} — JPG/PNG, 6 tagacha, har biri 10 MB gacha.
+          </p>
+
+          {isEdit && existing && (existing.images?.length ?? 0) > 0 && (
+            <FormField label="Mavjud rasmlar" className="mb-4">
+              <div className="grid grid-cols-3 gap-2">
+                {(existing.images ?? []).map((img) => (
                   <div key={img.id} className="relative aspect-square overflow-hidden rounded-lg border border-surface-border">
                     <img src={img.url} alt="" className="h-full w-full object-cover" />
                     <IconButton
@@ -124,24 +147,22 @@ export default function AdminWasteFormPage() {
             </FormField>
           )}
 
-          <FormField label={isEdit ? "Yangi rasmlar qo'shish" : "Rasmlar"}>
-            <GalleryUploader
-              files={images}
-              onChange={setImages}
-              max={GALLERY_UPLOAD.MAX_IMAGES - (existing?.images.length ?? 0)}
-            />
-          </FormField>
+          <GalleryUploader
+            files={images}
+            onChange={setImages}
+            max={GALLERY_UPLOAD.MAX_IMAGES - (existing?.images?.length ?? 0)}
+          />
+        </Card>
 
-          <div className="mt-2 flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-              Bekor qilish
-            </Button>
-            <Button type="submit" isLoading={isSubmitting}>
-              {isEdit ? "Saqlash" : "Joylashtirish"}
-            </Button>
-          </div>
-        </form>
-      </Card>
+        <div className="flex justify-end gap-3 lg:col-span-5">
+          <Button type="button" variant="outline" onClick={() => navigate("/app/admin/waste")}>
+            <Ban size={16} /> Bekor qilish
+          </Button>
+          <Button type="submit" isLoading={isSubmitting || createMutation.isPending || updateMutation.isPending}>
+            <Save size={16} /> {isEdit ? "Saqlash" : "Joylashtirish"}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

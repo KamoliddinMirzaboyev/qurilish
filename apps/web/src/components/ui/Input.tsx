@@ -17,11 +17,12 @@ interface FormFieldProps {
   required?: boolean;
   children: React.ReactNode;
   htmlFor?: string;
+  className?: string;
 }
 
-export function FormField({ label, helperText, error, required, children, htmlFor }: FormFieldProps) {
+export function FormField({ label, helperText, error, required, children, htmlFor, className }: FormFieldProps) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={clsx("flex flex-col gap-1.5", className)}>
       {label && (
         <label htmlFor={htmlFor} className="text-sm font-medium text-ink">
           {label}

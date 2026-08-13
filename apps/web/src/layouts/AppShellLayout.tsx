@@ -1,44 +1,62 @@
 import { Suspense, useState, useRef, useEffect } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Menu, X, LogOut, User, ChevronDown } from "lucide-react";
+import {
+  Menu,
+  X,
+  LogOut,
+  User,
+  ChevronDown,
+  LayoutDashboard,
+  Building2,
+  Users,
+  ClipboardList,
+  FileText,
+  Mountain,
+  Recycle,
+  Handshake,
+  type LucideIcon,
+} from "lucide-react";
 import { LogoWithText } from "@/components/shared/Logo";
 import { UserAvatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/features/auth/AuthContext";
 import { api } from "@/lib/api";
 import { PageLoader } from "@/routes/guards";
+import { NotificationBell } from "@/components/layout/NotificationBell";
+import { useNotificationStream } from "@/features/notifications/hooks";
 import clsx from "clsx";
 
 interface NavItem {
   label: string;
   to: string;
+  icon: LucideIcon;
   end?: boolean;
 }
 
 const navByRole: Record<string, NavItem[]> = {
   ADMIN: [
-    { label: "Boshqaruv paneli", to: "/app/admin", end: true },
-    { label: "Muammolarim", to: "/app/admin/problems" },
-    { label: "Takliflar", to: "/app/admin/proposals" },
-    { label: "Chiqindilarim", to: "/app/admin/waste" },
-    { label: "Bog'lanishlar", to: "/app/connections" },
-    { label: "Profil", to: "/app/profile" },
+    { label: "Boshqaruv paneli", to: "/app/admin", icon: LayoutDashboard, end: true },
+    { label: "Muammolarim", to: "/app/admin/problems", icon: ClipboardList },
+    { label: "Takliflar", to: "/app/admin/proposals", icon: FileText },
+    { label: "Chiqindilarim", to: "/app/admin/waste", icon: Recycle },
+    { label: "Bog'lanishlar", to: "/app/connections", icon: Handshake },
+    { label: "Profil", to: "/app/profile", icon: User },
   ],
   USER: [
-    { label: "Boshqaruv paneli", to: "/app/user", end: true },
-    { label: "Muammolar banki", to: "/app/problems" },
-    { label: "Takliflarim", to: "/app/user/proposals" },
-    { label: "Bog'lanishlar", to: "/app/connections" },
-    { label: "Profil", to: "/app/profile" },
+    { label: "Boshqaruv paneli", to: "/app/user", icon: LayoutDashboard, end: true },
+    { label: "Muammolar banki", to: "/app/problems", icon: ClipboardList },
+    { label: "Takliflarim", to: "/app/user/proposals", icon: FileText },
+    { label: "Bog'lanishlar", to: "/app/connections", icon: Handshake },
+    { label: "Profil", to: "/app/profile", icon: User },
   ],
   SUPERADMIN: [
-    { label: "Boshqaruv paneli", to: "/superadmin", end: true },
-    { label: "Firmalar", to: "/superadmin/admins" },
-    { label: "Foydalanuvchilar", to: "/superadmin/users" },
-    { label: "Muammolar", to: "/superadmin/problems" },
-    { label: "Takliflar", to: "/superadmin/proposals" },
-    { label: "Konlar", to: "/superadmin/mines" },
-    { label: "Chiqindi", to: "/superadmin/waste" },
-    { label: "Profil", to: "/app/profile" },
+    { label: "Boshqaruv paneli", to: "/superadmin", icon: LayoutDashboard, end: true },
+    { label: "Firmalar", to: "/superadmin/admins", icon: Building2 },
+    { label: "Foydalanuvchilar", to: "/superadmin/users", icon: Users },
+    { label: "Muammolar", to: "/superadmin/problems", icon: ClipboardList },
+    { label: "Takliflar", to: "/superadmin/proposals", icon: FileText },
+    { label: "Konlar", to: "/superadmin/mines", icon: Mountain },
+    { label: "Chiqindi", to: "/superadmin/waste", icon: Recycle },
+    { label: "Profil", to: "/app/profile", icon: User },
   ],
 };
 
@@ -53,11 +71,12 @@ function NavLinks({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => 
           onClick={onNavigate}
           className={({ isActive }) =>
             clsx(
-              "rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors duration-150",
-              isActive ? "bg-brand-primary/10 text-brand-primary" : "text-ink-muted hover:bg-slate-100 hover:text-ink"
+              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
+              isActive ? "bg-brand-primary text-white" : "text-ink-muted hover:bg-slate-100 hover:text-ink"
             )
           }
         >
+          <item.icon size={16} className="shrink-0" />
           {item.label}
         </NavLink>
       ))}
@@ -82,6 +101,7 @@ export function AppShellLayout() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useNotificationStream();
   if (!user) return null;
   const items = navByRole[user.role] ?? [];
 
@@ -94,25 +114,27 @@ export function AppShellLayout() {
 
   return (
     <div className="flex min-h-screen bg-surface-page">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-surface-border bg-white p-5 md:flex">
-        <Link to="/" className="mb-8">
-          <LogoWithText size={26} />
+      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col overflow-y-auto border-r border-surface-border bg-white p-3 md:flex">
+        <Link to="/" className="mb-5 px-1">
+          <LogoWithText size={24} />
         </Link>
         <NavLinks items={items} />
         <button
           onClick={handleLogout}
-          className="mt-auto flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium text-danger hover:bg-red-50"
+          className="mt-auto flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-danger hover:bg-red-50"
         >
           <LogOut size={16} /> Chiqish
         </button>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-surface-border bg-white px-4 md:justify-end">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-surface-border bg-white px-4 md:justify-end">
           <button className="text-ink md:hidden" onClick={() => setDrawerOpen(true)} aria-label="Menyuni ochish">
             <Menu size={24} />
           </button>
 
+          <div className="flex items-center gap-1">
+          <NotificationBell />
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setUserMenuOpen((v) => !v)}
@@ -146,6 +168,7 @@ export function AppShellLayout() {
               </div>
             )}
           </div>
+          </div>
         </header>
 
         {drawerOpen && (
@@ -169,7 +192,7 @@ export function AppShellLayout() {
           </div>
         )}
 
-        <main className="flex-1 p-4 sm:p-6">
+        <main className="flex-1 p-3 sm:p-4">
           <div className="mx-auto max-w-content">
             <Suspense fallback={<PageLoader />}>
               <Outlet />

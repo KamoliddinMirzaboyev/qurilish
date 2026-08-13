@@ -57,7 +57,7 @@ export default function SuperAdminMinesPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.items.map((mine) => (
             <Card key={mine.id} className="flex flex-col gap-0 overflow-hidden !p-0">
-              <ImageSlider images={mine.images.map((img) => img.url)} alt={mine.name} className="aspect-video" />
+              <ImageSlider images={(mine.images ?? []).map((img) => img.url)} alt={mine.name} className="aspect-video" />
               <div className="flex flex-1 flex-col gap-2.5 p-4">
                 <h3 className="font-semibold text-brand-dark">{mine.name}</h3>
                 <p className="flex items-center gap-1.5 text-sm text-ink-muted">
