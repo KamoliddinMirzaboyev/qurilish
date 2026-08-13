@@ -69,9 +69,10 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ label, variant = "ghost", className, children, ...props }, ref) => (
+  ({ label, variant = "ghost", className, children, type = "button", ...props }, ref) => (
     <button
       ref={ref}
+      type={type}
       aria-label={label}
       title={label}
       className={clsx(

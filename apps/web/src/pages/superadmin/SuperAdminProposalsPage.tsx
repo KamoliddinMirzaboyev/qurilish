@@ -5,7 +5,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput, FilterBar } from "@/components/ui/SearchInput";
 import { Select } from "@/components/ui/Input";
-import { Card, EmptyState, CardGridSkeleton } from "@/components/ui/Card";
+import { Card, EmptyState } from "@/components/ui/Card";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { ProposalStatusBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
@@ -60,7 +61,7 @@ export default function SuperAdminProposalsPage() {
       </FilterBar>
 
       {isLoading ? (
-        <CardGridSkeleton count={4} />
+        <ListSkeleton count={4} />
       ) : data && data.items.length > 0 ? (
         <div className="flex flex-col gap-3">
           {data.items.map((proposal) => (

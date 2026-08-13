@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
+import { X, Save, Ban } from "lucide-react";
 import {
   createProblemSchema,
   CATEGORY_LABELS_UZ,
@@ -11,7 +11,8 @@ import {
   type CreateProblemInput,
 } from "@buildscience/shared";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, LoadingSkeleton } from "@/components/ui/Card";
+import { Card, ErrorState } from "@/components/ui/Card";
+import { FormSkeleton } from "@/components/ui/Skeleton";
 import { FormField, Input, Textarea, Select, RadioGroup, CurrencyInput } from "@/components/ui/Input";
 import { GalleryUploader } from "@/components/ui/GalleryUploader";
 import { IconButton, Button } from "@/components/ui/Button";
@@ -29,7 +30,7 @@ export default function AdminProblemFormPage() {
   const navigate = useNavigate();
   const { data: existing, isLoading } = useProblem(problemId);
   const createMutation = useCreateProblem();
-  const updateMutation = useUpdateProblem(problemId ?? "");
+  const updateMutation = useUpdateProblem();
   const deleteImageMutation = useDeleteProblemImage(problemId ?? "");
   const [images, setImages] = useState<File[]>([]);
 
@@ -43,7 +44,7 @@ export default function AdminProblemFormPage() {
     formState: { errors, isSubmitting },
   } = useForm<CreateProblemInput>({
     resolver: zodResolver(createProblemSchema),
-    defaultValues: { budgetType: "FIXED", category: "CONSTRUCTION" },
+    defaultValues: { budgetType: "FIXED", category: "CONSTRUCTION", budgetAmount: null },
   });
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function AdminProblemFormPage() {
         description: existing.description,
         category: existing.category,
         budgetType: existing.budgetType,
-        budgetAmount: existing.budgetAmount ? Number(existing.budgetAmount) : undefined,
+        budgetAmount: existing.budgetAmount != null ? Number(existing.budgetAmount) : null,
       });
     }
   }, [existing, reset]);
@@ -67,13 +68,14 @@ export default function AdminProblemFormPage() {
   async function onSubmit(values: CreateProblemInput) {
     try {
       if (isEdit) {
-        await updateMutation.mutateAsync({ input: values, images });
+        if (!problemId) return;
+        await updateMutation.mutateAsync({ problemId, input: values, images });
         notify.success("O'zgarishlar saqlandi.");
-        navigate(`/problems/${problemId}`);
+        navigate(`/app/admin/problems`);
       } else {
-        const created = await createMutation.mutateAsync({ input: values, images });
+        await createMutation.mutateAsync({ input: values, images });
         notify.success("Muammo joylashtirildi.");
-        navigate(`/problems/${created.id}`);
+        navigate(`/app/admin/problems`);
       }
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -81,11 +83,11 @@ export default function AdminProblemFormPage() {
           for (const [field, messages] of Object.entries(err.errors)) {
             setError(field as keyof CreateProblemInput, { message: messages[0] });
           }
-          notify.error(err.message);
-          return;
         }
         notify.error(err.message);
+        return;
       }
+      notify.error("Saqlashda xatolik yuz berdi.");
     }
   }
 
@@ -99,16 +101,31 @@ export default function AdminProblemFormPage() {
   }
 
   if (isEdit && isLoading) {
-    return <LoadingSkeleton className="h-96 w-full" />;
+    return <FormSkeleton />;
+  }
+
+  if (isEdit && !existing) {
+    return <ErrorState title="Muammo topilmadi." onRetry={() => navigate("/app/admin/problems")} />;
+  }
+
+  if (isEdit && existing && existing.status !== "OPEN") {
+    return <ErrorState title="Faqat ochiq muammoni tahrirlash mumkin." onRetry={() => navigate("/app/admin/problems")} />;
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex max-w-3xl flex-col gap-4">
       <PageHeader title={isEdit ? "Muammoni tahrirlash" : "Yangi muammo joylashtirish"} />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <form
+            onSubmit={handleSubmit(onSubmit, (errs) => {
+              const first = Object.values(errs)[0];
+              const message = first && "message" in first && first.message ? String(first.message) : "Kiritilgan ma'lumotlarda xatolik bor.";
+              notify.error(message);
+            })}
+            className="flex flex-col gap-4"
+          >
             <FormField label="Muammo sarlavhasi" required error={errors.title?.message} htmlFor="title">
               <Input id="title" {...register("title")} />
               <p className="text-right text-xs text-ink-muted">{title.length} / 120</p>
@@ -127,7 +144,10 @@ export default function AdminProblemFormPage() {
               <RadioGroup
                 name="budgetType"
                 value={budgetType}
-                onChange={(v) => setValue("budgetType", v, { shouldValidate: true })}
+                onChange={(v) => {
+                  setValue("budgetType", v, { shouldValidate: true });
+                  if (v === "NEGOTIABLE") setValue("budgetAmount", null, { shouldValidate: true });
+                }}
                 options={[
                   { value: "FIXED", label: BUDGET_TYPE_LABELS_UZ.FIXED },
                   { value: "NEGOTIABLE", label: BUDGET_TYPE_LABELS_UZ.NEGOTIABLE },
@@ -137,7 +157,11 @@ export default function AdminProblemFormPage() {
 
             {budgetType === "FIXED" && (
               <FormField label="Budjet miqdori" required error={errors.budgetAmount?.message} htmlFor="budgetAmount">
-                <CurrencyInput id="budgetAmount" value={budgetAmount ?? undefined} onValueChange={(v) => setValue("budgetAmount", v ?? null)} />
+                <CurrencyInput
+                  id="budgetAmount"
+                  value={budgetAmount ?? undefined}
+                  onValueChange={(v) => setValue("budgetAmount", v ?? null, { shouldValidate: true, shouldDirty: true })}
+                />
               </FormField>
             )}
 
@@ -170,10 +194,10 @@ export default function AdminProblemFormPage() {
 
             <div className="mt-2 flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-                Bekor qilish
+                <Ban size={16} /> Bekor qilish
               </Button>
-              <Button type="submit" isLoading={isSubmitting}>
-                {isEdit ? "O'zgarishlarni saqlash" : "E'lonni joylashtirish"}
+              <Button type="submit" isLoading={isSubmitting || createMutation.isPending || updateMutation.isPending}>
+                <Save size={16} /> {isEdit ? "Saqlash" : "Joylashtirish"}
               </Button>
             </div>
           </form>

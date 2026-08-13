@@ -2,7 +2,8 @@ import { useParams } from "react-router-dom";
 import { MapPin } from "lucide-react";
 import { useMine } from "@/features/mines/hooks";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
-import { Card, ErrorState, LoadingSkeleton } from "@/components/ui/Card";
+import { Card, ErrorState } from "@/components/ui/Card";
+import { DetailSkeleton } from "@/components/ui/Skeleton";
 import { ImageSlider } from "@/components/ui/ImageSlider";
 
 export default function MineDetailPage() {
@@ -10,12 +11,7 @@ export default function MineDetailPage() {
   const { data: mine, isLoading, isError, refetch } = useMine(mineId);
 
   if (isLoading) {
-    return (
-      <div className="mx-auto max-w-content px-4 py-10">
-        <LoadingSkeleton className="h-8 w-2/3" />
-        <LoadingSkeleton className="mt-4 h-64 w-full" />
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (isError || !mine) {

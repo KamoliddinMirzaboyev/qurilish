@@ -9,7 +9,8 @@ import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Select } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Card, EmptyState, CardGridSkeleton } from "@/components/ui/Card";
+import { Card, EmptyState } from "@/components/ui/Card";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { ProblemStatusBadge, ProposalStatusBadge } from "@/components/ui/Badge";
 import { ConfirmationDialog } from "@/components/ui/Modal";
 import { ConnectionCard } from "@/components/shared/ConnectionCard";
@@ -97,7 +98,7 @@ export default function AdminProblemProposalsPage() {
       )}
 
       {isLoading ? (
-        <CardGridSkeleton count={3} />
+        <ListSkeleton count={3} />
       ) : sortedProposals.length === 0 ? (
         <EmptyState title="Ushbu muammoga hali taklif kelmagan." />
       ) : (

@@ -24,6 +24,7 @@ export function toProblemListItem(problem: ProblemWithCompany, proposalCount: nu
     companyName: problem.company.name,
     proposalCount,
     coverImageUrl: problem.images[0] ? imageUrl(problem.images[0].storedName) : null,
+    imageUrls: (problem.images ?? []).map((img) => imageUrl(img.storedName)),
     createdAt: problem.createdAt.toISOString(),
   };
 }
@@ -41,6 +42,7 @@ export function toProblemDetail(problem: ProblemWithCompany, proposalCount: numb
     companyName: problem.company.name,
     proposalCount,
     coverImageUrl: problem.images[0] ? imageUrl(problem.images[0].storedName) : null,
+    imageUrls: (problem.images ?? []).map((img) => imageUrl(img.storedName)),
     images: problem.images.map((img) => ({ id: img.id, url: imageUrl(img.storedName) })),
     createdAt: problem.createdAt.toISOString(),
     matchedAt: problem.matchedAt ? problem.matchedAt.toISOString() : null,

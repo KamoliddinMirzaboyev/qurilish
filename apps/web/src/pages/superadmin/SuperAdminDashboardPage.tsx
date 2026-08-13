@@ -1,7 +1,8 @@
 import { Users, Building2, AlertCircle, FileText, CheckCircle, Ban, Mountain, Recycle } from "lucide-react";
 import { useAdminStats } from "@/features/admin/hooks";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { StatCard, LoadingSkeleton } from "@/components/ui/Card";
+import { StatCard } from "@/components/ui/Card";
+import { StatsSkeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 
 export default function SuperAdminDashboardPage() {
@@ -12,11 +13,7 @@ export default function SuperAdminDashboardPage() {
       <PageHeader title="Hokimiyat paneli" />
 
       {isLoading || !stats ? (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <LoadingSkeleton key={i} className="h-[88px] rounded-card" />
-          ))}
-        </div>
+        <StatsSkeleton count={8} />
       ) : (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard label="Foydalanuvchilar" value={stats.totalUsers} icon={<Users size={20} />} color="brand" />

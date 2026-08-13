@@ -11,6 +11,7 @@ import { ok, paginate } from "../../utils/response.js";
 import { AppError } from "../../utils/AppError.js";
 import { prisma } from "../../services/prisma.js";
 import { toProposalListItem } from "./proposals.serializers.js";
+import { pushNotification } from "../../services/notifications.js";
 
 export const proposalsRouter = Router();
 
@@ -187,6 +188,14 @@ proposalsRouter.post(
         status: "PENDING",
       },
       include: { scientist: true },
+    });
+
+    void pushNotification({
+      userId: problem.companyId,
+      type: "PROPOSAL_RECEIVED",
+      title: "Yangi taklif keldi",
+      body: `${req.user!.name} «${problem.title}» muammosiga taklif yubordi.`,
+      link: `/app/admin/problems/${problem.id}/proposals`,
     });
 
     ok(res, toProposalListItem(proposal), 201);
@@ -414,8 +423,17 @@ proposalsRouter.post(
     const updated = await prisma.proposal.update({
       where: { id: proposal.id },
       data: { status: "WITHDRAWN", withdrawnAt: new Date() },
-      include: { scientist: true },
+      include: { scientist: true, problem: true },
     });
+    if (updated.problem) {
+      void pushNotification({
+        userId: updated.problem.companyId,
+        type: "PROPOSAL_WITHDRAWN",
+        title: "Taklif bekor qilindi",
+        body: `${req.user!.name} «${updated.problem.title}» bo'yicha taklifini bekor qildi.`,
+        link: `/app/admin/problems/${updated.problemId}/proposals`,
+      });
+    }
     ok(res, toProposalListItem(updated));
   })
 );
@@ -474,10 +492,36 @@ proposalsRouter.post(
         data: { status: "REJECTED" },
       });
 
-      return tx.proposal.findFirstOrThrow({ where: { id: proposal.id }, include: { scientist: true } });
+      return {
+        accepted: await tx.proposal.findFirstOrThrow({ where: { id: proposal.id }, include: { scientist: true } }),
+        problemTitle: problem.title,
+        rejectedIds: (
+          await tx.proposal.findMany({
+            where: { problemId: problem.id, status: "REJECTED", id: { not: proposal.id }, deletedAt: null },
+            select: { scientistId: true },
+          })
+        ).map((p) => p.scientistId),
+      };
     });
 
-    ok(res, toProposalListItem(result));
+    void pushNotification({
+      userId: result.accepted.scientistId,
+      type: "PROPOSAL_ACCEPTED",
+      title: "Taklifingiz qabul qilindi",
+      body: `«${result.problemTitle}» muammosi bo'yicha taklifingiz tanlandi. Kontaktlar ochildi.`,
+      link: "/app/connections",
+    });
+    for (const scientistId of result.rejectedIds) {
+      void pushNotification({
+        userId: scientistId,
+        type: "PROPOSAL_REJECTED",
+        title: "Taklif rad etildi",
+        body: `«${result.problemTitle}» uchun boshqa taklif tanlandi.`,
+        link: "/app/user/proposals",
+      });
+    }
+
+    ok(res, toProposalListItem(result.accepted));
   })
 );
 

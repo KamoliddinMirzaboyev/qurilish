@@ -4,7 +4,8 @@ import { useMyProposals, useWithdrawProposal } from "@/features/proposals/hooks"
 import { useConnection } from "@/features/connections/hooks";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Tabs } from "@/components/ui/Tabs";
-import { Card, EmptyState, CardGridSkeleton, LoadingSkeleton } from "@/components/ui/Card";
+import { Card, EmptyState } from "@/components/ui/Card";
+import { ListSkeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { CategoryBadge, ProposalStatusBadge } from "@/components/ui/Badge";
 import { ConfirmationDialog } from "@/components/ui/Modal";
@@ -25,7 +26,7 @@ const tabs = [
 function AcceptedPanel({ proposal }: { proposal: ProposalListItem }) {
   const { data: connection } = useConnection(proposal.id);
   const view = connection as ConnectionScientistView | undefined;
-  if (!view) return <LoadingSkeleton className="h-24 w-full" />;
+  if (!view) return <ListSkeleton count={1} />;
 
   return (
     <div className="rounded-card border border-emerald-200 bg-emerald-50 p-5">
@@ -73,7 +74,7 @@ export default function UserProposalsPage() {
       <Tabs tabs={tabs as unknown as { value: string; label: string }[]} value={tab} onChange={(v) => setTab(v as typeof tab)} />
 
       {isLoading ? (
-        <CardGridSkeleton count={3} />
+        <ListSkeleton count={4} />
       ) : items.length === 0 ? (
         <EmptyState title="Siz hali taklif yubormagansiz." />
       ) : (

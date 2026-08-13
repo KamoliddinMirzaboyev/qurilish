@@ -4,7 +4,8 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useProblems } from "@/features/problems/hooks";
 import { useMyProposals } from "@/features/proposals/hooks";
 import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
-import { StatCard, Card, EmptyState, LoadingSkeleton } from "@/components/ui/Card";
+import { StatCard, Card, EmptyState } from "@/components/ui/Card";
+import { CardGridSkeleton, ListSkeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { ProposalStatusBadge } from "@/components/ui/Badge";
 import { ProblemCard } from "@/components/problems/ProblemCard";
@@ -42,11 +43,7 @@ export default function UserDashboardPage() {
         <SectionHeader title="Yangi muammolar" action={<Link to="/app/problems" className="text-sm font-medium text-brand-primary hover:underline">Barchasi</Link>} />
         <div className="mt-4">
           {problemsLoading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <LoadingSkeleton key={i} className="h-[180px] rounded-card" />
-              ))}
-            </div>
+            <CardGridSkeleton count={3} />
           ) : problems && problems.items.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {problems.items.map((p) => (
@@ -63,7 +60,7 @@ export default function UserDashboardPage() {
         <SectionHeader title="So'nggi takliflarim" />
         <div className="mt-4 flex flex-col gap-3">
           {proposalsLoading ? (
-            Array.from({ length: 3 }).map((_, i) => <LoadingSkeleton key={i} className="h-[72px] rounded-card" />)
+            <ListSkeleton count={3} />
           ) : proposals.length > 0 ? (
             proposals.slice(0, 5).map((p) => (
               <Card key={p.id} className="flex flex-wrap items-center justify-between gap-3 transition-shadow hover:shadow-md">

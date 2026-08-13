@@ -63,10 +63,11 @@ model User {
   updatedAt      DateTime   @updatedAt
   deletedAt      DateTime?
 
-  problems  Problem[]
-  proposals Proposal[]
-  mines     Mine[]
-  wastes    Waste[]
+  problems      Problem[]
+  proposals     Proposal[]
+  mines         Mine[]
+  wastes        Waste[]
+  notifications Notification[]
 
   @@index([role])
   @@index([status])
@@ -140,6 +141,30 @@ model Proposal {
   @@index([scientistId])
   @@index([status])
   @@map("proposals")
+}
+
+enum NotificationType {
+  PROPOSAL_RECEIVED
+  PROPOSAL_ACCEPTED
+  PROPOSAL_REJECTED
+  PROPOSAL_WITHDRAWN
+  PROBLEM_CLOSED
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+  @@map("notifications")
 }
 
 model Mine {

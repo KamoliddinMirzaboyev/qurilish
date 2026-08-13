@@ -2,19 +2,15 @@ import { useParams } from "react-router-dom";
 import { Factory } from "lucide-react";
 import { useWaste } from "@/features/waste/hooks";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
-import { Card, ErrorState, LoadingSkeleton } from "@/components/ui/Card";
+import { Card, ErrorState } from "@/components/ui/Card";
+import { DetailSkeleton } from "@/components/ui/Skeleton";
 
 export default function WasteDetailPage() {
   const { wasteId } = useParams();
   const { data: waste, isLoading, isError, refetch } = useWaste(wasteId);
 
   if (isLoading) {
-    return (
-      <div className="mx-auto max-w-content px-4 py-10">
-        <LoadingSkeleton className="h-8 w-2/3" />
-        <LoadingSkeleton className="mt-4 h-64 w-full" />
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (isError || !waste) {

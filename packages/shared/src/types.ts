@@ -46,6 +46,7 @@ export interface ProblemListItem {
   companyName: string;
   proposalCount: number;
   coverImageUrl: string | null;
+  imageUrls: string[];
   createdAt: string;
 }
 
@@ -166,6 +167,28 @@ export interface WasteListItem {
   coverImageUrl: string | null;
   adminName: string;
   createdAt: string;
+}
+
+export type NotificationType =
+  | "PROPOSAL_RECEIVED"
+  | "PROPOSAL_ACCEPTED"
+  | "PROPOSAL_REJECTED"
+  | "PROPOSAL_WITHDRAWN"
+  | "PROBLEM_CLOSED";
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  link: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationFeed {
+  items: AppNotification[];
+  unreadCount: number;
 }
 
 export interface WasteDetail {

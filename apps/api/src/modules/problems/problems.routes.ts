@@ -19,6 +19,7 @@ import { ok, paginate } from "../../utils/response.js";
 import { AppError } from "../../utils/AppError.js";
 import { prisma } from "../../services/prisma.js";
 import { toProblemDetail, toProblemListItem } from "./problems.serializers.js";
+import { pushNotification } from "../../services/notifications.js";
 
 export const problemsRouter = Router();
 
@@ -458,6 +459,11 @@ problemsRouter.post(
       throw AppError.conflict("Faqat ochiq muammoni yopish mumkin.");
     }
 
+    const pending = await prisma.proposal.findMany({
+      where: { problemId: existing.id, status: "PENDING", deletedAt: null },
+      select: { scientistId: true },
+    });
+
     const updated = await prisma.$transaction(async (tx) => {
       await tx.proposal.updateMany({
         where: { problemId: existing.id, status: "PENDING" },
@@ -469,6 +475,16 @@ problemsRouter.post(
         include: { company: true, images: { orderBy: { sortOrder: "asc" } }, _count: { select: { proposals: true } } },
       });
     });
+
+    for (const p of pending) {
+      void pushNotification({
+        userId: p.scientistId,
+        type: "PROBLEM_CLOSED",
+        title: "E'lon yopildi",
+        body: `«${existing.title}» yopildi, kutilayotgan takliflar rad etildi.`,
+        link: "/app/user/proposals",
+      });
+    }
 
     ok(res, toProblemDetail(updated, updated._count.proposals));
   })

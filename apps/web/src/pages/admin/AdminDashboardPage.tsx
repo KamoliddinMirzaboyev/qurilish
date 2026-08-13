@@ -3,7 +3,8 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { useCompanyProblems, useCompanyStats } from "@/features/problems/hooks";
 import { useCompanyRecentProposals } from "@/features/proposals/hooks";
 import { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
-import { StatCard, Card, EmptyState, LoadingSkeleton } from "@/components/ui/Card";
+import { StatCard, Card, EmptyState } from "@/components/ui/Card";
+import { ListSkeleton, StatsSkeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
 import { ProblemStatusBadge } from "@/components/ui/Badge";
 import { Link } from "react-router-dom";
@@ -47,9 +48,9 @@ export default function AdminDashboardPage() {
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {statsLoading || !stats ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <LoadingSkeleton key={i} className="h-[88px] rounded-card" />
-              ))
+              <div className="col-span-full">
+                <StatsSkeleton />
+              </div>
             ) : (
               <>
                 <StatCard label="Ochiq muammolar" value={stats.openProblems} icon={<AlertCircle size={20} />} color="brand" />
@@ -64,7 +65,7 @@ export default function AdminDashboardPage() {
             <SectionHeader title="So'nggi muammolarim" action={<Link to="/app/admin/problems" className="text-sm font-medium text-brand-primary hover:underline">Barchasi</Link>} />
             <div className="mt-4 flex flex-col gap-3">
               {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => <LoadingSkeleton key={i} className="h-[72px] rounded-card" />)
+                <ListSkeleton count={3} />
               ) : (
                 items.slice(0, 5).map((problem) => (
                   <Card key={problem.id} className="flex flex-wrap items-center justify-between gap-3 transition-shadow hover:shadow-md">
@@ -87,7 +88,7 @@ export default function AdminDashboardPage() {
             <SectionHeader title="Yangi takliflar" />
             <div className="mt-4 flex flex-col gap-3">
               {!recentProposals ? (
-                Array.from({ length: 2 }).map((_, i) => <LoadingSkeleton key={i} className="h-[72px] rounded-card" />)
+                <ListSkeleton count={2} />
               ) : recentProposals.items.length > 0 ? (
                 recentProposals.items.map((proposal) => (
                   <Card key={proposal.id} className="flex flex-wrap items-center justify-between gap-3 transition-shadow hover:shadow-md">
