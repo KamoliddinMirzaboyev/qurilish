@@ -16,6 +16,7 @@ export function toMineListItem(mine: MineWithRelations): MineListItem {
     rawMaterialType: mine.rawMaterialType,
     volume: mine.volume,
     coverImageUrl: mine.images[0] ? imageUrl(mine.images[0].storedName) : null,
+    imageUrls: mine.images.map((img) => imageUrl(img.storedName)),
     adminName: mine.admin.name,
     createdAt: mine.createdAt.toISOString(),
   };

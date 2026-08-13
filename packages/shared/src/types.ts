@@ -139,6 +139,7 @@ export interface MineListItem {
   rawMaterialType: string;
   volume: string;
   coverImageUrl: string | null;
+  imageUrls: string[];
   adminName: string;
   createdAt: string;
 }

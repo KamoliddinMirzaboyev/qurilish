@@ -2,18 +2,15 @@ import { Link } from "react-router-dom";
 import { MapPin } from "lucide-react";
 import type { MineListItem } from "@buildscience/shared";
 import { Card } from "@/components/ui/Card";
+import { ImageSlider } from "@/components/ui/ImageSlider";
 
 export function MineCard({ mine }: { mine: MineListItem }) {
+  const slides = mine.imageUrls?.length ? mine.imageUrls : mine.coverImageUrl ? [mine.coverImageUrl] : [];
+
   return (
     <Link to={`/mines/${mine.id}`}>
       <Card className="flex h-full flex-col gap-3 transition-shadow hover:shadow-md">
-        <div className="aspect-video overflow-hidden rounded-lg bg-surface-muted">
-          {mine.coverImageUrl ? (
-            <img src={mine.coverImageUrl} alt={mine.name} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full items-center justify-center text-sm text-ink-muted">Rasm yo'q</div>
-          )}
-        </div>
+        <ImageSlider images={slides} alt={mine.name} className="aspect-video rounded-lg" />
         <h3 className="font-semibold text-brand-dark">{mine.name}</h3>
         <p className="flex items-center gap-1.5 text-sm text-ink-muted">
           <MapPin size={14} /> {mine.location}

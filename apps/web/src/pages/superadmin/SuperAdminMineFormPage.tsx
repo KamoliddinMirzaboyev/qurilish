@@ -105,10 +105,10 @@ export default function SuperAdminMineFormPage() {
             <Textarea id="description" className="min-h-[140px]" {...register("description")} />
           </FormField>
 
-          {isEdit && existing && existing.images.length > 0 && (
+          {isEdit && existing && (existing.images?.length ?? 0) > 0 && (
             <FormField label="Mavjud rasmlar">
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                {existing.images.map((img) => (
+                {(existing.images ?? []).map((img) => (
                   <div key={img.id} className="relative aspect-square overflow-hidden rounded-lg border border-surface-border">
                     <img src={img.url} alt="" className="h-full w-full object-cover" />
                     <IconButton
@@ -128,7 +128,7 @@ export default function SuperAdminMineFormPage() {
             <GalleryUploader
               files={images}
               onChange={setImages}
-              max={GALLERY_UPLOAD.MAX_IMAGES - (existing?.images.length ?? 0)}
+              max={GALLERY_UPLOAD.MAX_IMAGES - (existing?.images?.length ?? 0)}
             />
           </FormField>
 

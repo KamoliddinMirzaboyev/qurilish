@@ -31,9 +31,9 @@ export default function WasteDetailPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
-          {waste.images.length > 0 ? (
+          {(waste.images ?? []).length > 0 ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {waste.images.map((img) => (
+              {(waste.images ?? []).map((img) => (
                 <div key={img.id} className="aspect-square overflow-hidden rounded-lg bg-surface-muted">
                   <img src={img.url} alt={waste.factoryName} className="h-full w-full object-cover" />
                 </div>

@@ -164,7 +164,7 @@ export default function AdminProblemFormPage() {
               <GalleryUploader
                 files={images}
                 onChange={setImages}
-                max={GALLERY_UPLOAD.MAX_IMAGES - (existing?.images.length ?? 0)}
+                max={GALLERY_UPLOAD.MAX_IMAGES - (existing?.images?.length ?? 0)}
               />
             </FormField>
 
