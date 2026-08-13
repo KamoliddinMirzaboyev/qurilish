@@ -2,7 +2,7 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
 
-type Variant = "primary" | "secondary" | "outline" | "outlineOnDark" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "outline" | "outlineOnDark" | "ghost" | "danger" | "official";
 type Size = "sm" | "md" | "lg";
 
 const variantClasses: Record<Variant, string> = {
@@ -12,6 +12,7 @@ const variantClasses: Record<Variant, string> = {
   outlineOnDark: "border border-white/30 bg-transparent text-white hover:bg-white/10",
   ghost: "text-ink hover:bg-slate-100",
   danger: "bg-danger text-white hover:bg-red-700",
+  official: "bg-gov-gold text-gov-navy hover:bg-gov-goldHover",
 };
 
 const sizeClasses: Record<Size, string> = {

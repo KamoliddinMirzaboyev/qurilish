@@ -38,6 +38,7 @@ export default function AdminProblemFormPage() {
     handleSubmit,
     watch,
     setValue,
+    setError,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<CreateProblemInput>({
@@ -75,7 +76,16 @@ export default function AdminProblemFormPage() {
         navigate(`/problems/${created.id}`);
       }
     } catch (err) {
-      if (err instanceof ApiRequestError) notify.error(err.message);
+      if (err instanceof ApiRequestError) {
+        if (err.errors) {
+          for (const [field, messages] of Object.entries(err.errors)) {
+            setError(field as keyof CreateProblemInput, { message: messages[0] });
+          }
+          notify.error(err.message);
+          return;
+        }
+        notify.error(err.message);
+      }
     }
   }
 
@@ -131,10 +141,10 @@ export default function AdminProblemFormPage() {
               </FormField>
             )}
 
-            {isEdit && existing && existing.images.length > 0 && (
+            {isEdit && existing && (existing.images?.length ?? 0) > 0 && (
               <FormField label="Mavjud rasmlar">
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                  {existing.images.map((img) => (
+                  {(existing.images ?? []).map((img) => (
                     <div key={img.id} className="relative aspect-square overflow-hidden rounded-lg border border-surface-border">
                       <img src={img.url} alt="" className="h-full w-full object-cover" />
                       <IconButton

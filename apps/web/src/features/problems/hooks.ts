@@ -56,7 +56,9 @@ export function useCreateProblem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ input, images }: { input: CreateProblemInput; images: File[] }) =>
-      api.postForm<ProblemDetail>("/problems", toFormData(input, images)),
+      images.length > 0
+        ? api.postForm<ProblemDetail>("/problems", toFormData(input, images))
+        : api.post<ProblemDetail>("/problems", input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company-problems"] });
       queryClient.invalidateQueries({ queryKey: ["company-stats"] });
@@ -69,7 +71,9 @@ export function useUpdateProblem(problemId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ input, images }: { input: CreateProblemInput; images: File[] }) =>
-      api.patchForm<ProblemDetail>(`/problems/${problemId}`, toFormData(input, images)),
+      images.length > 0
+        ? api.patchForm<ProblemDetail>(`/problems/${problemId}`, toFormData(input, images))
+        : api.patch<ProblemDetail>(`/problems/${problemId}`, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company-problems"] });
       queryClient.invalidateQueries({ queryKey: ["problem", problemId] });

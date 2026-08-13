@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .bg-gov-navy {
+    background-color: #071a33;
+  }
+  .bg-gov-navyDeep {
+    background-color: #04101f;
+  }
+  .text-gov-gold {
+    color: #c9a227;
+  }
+}
+
 @layer base {
   :root {
     color-scheme: light;

@@ -12,6 +12,15 @@ export default {
           teal: "#0F766E",
           amber: "#D97706",
         },
+        gov: {
+          navy: "#071A33",
+          navyDeep: "#04101F",
+          gold: "#C9A227",
+          goldHover: "#B8961F",
+          flagBlue: "#1EB5E6",
+          flagGreen: "#1EB53A",
+          flagRed: "#CE1126",
+        },
         surface: {
           page: "#F8FAFC",
           card: "#FFFFFF",
@@ -25,6 +34,7 @@ export default {
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["\"Source Serif 4\"", "Times New Roman", "Times", "serif"],
       },
       borderRadius: {
         card: "10px",
