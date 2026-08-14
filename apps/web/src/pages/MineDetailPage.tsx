@@ -5,10 +5,13 @@ import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Card, ErrorState } from "@/components/ui/Card";
 import { DetailSkeleton } from "@/components/ui/Skeleton";
 import { ImageSlider } from "@/components/ui/ImageSlider";
+import { MineMap } from "@/components/mines/MineMap";
+import { useMineMarkers } from "@/features/mines/useMineMarkers";
 
 export default function MineDetailPage() {
   const { mineId } = useParams();
   const { data: mine, isLoading, isError, refetch } = useMine(mineId);
+  const markers = useMineMarkers(mine ? [mine] : [], false);
 
   if (isLoading) {
     return <DetailSkeleton />;
@@ -44,20 +47,26 @@ export default function MineDetailPage() {
           </Card>
         </div>
 
-        <Card className="flex flex-col gap-4">
-          <div>
-            <p className="text-sm text-ink-muted">Xomashyo turi</p>
-            <p className="text-lg font-semibold text-brand-dark">{mine.rawMaterialType}</p>
-          </div>
-          <div>
-            <p className="text-sm text-ink-muted">Hajm</p>
-            <p className="text-lg font-semibold text-brand-dark">{mine.volume}</p>
-          </div>
-          <div>
-            <p className="text-sm text-ink-muted">E'lon beruvchi</p>
-            <p className="text-sm font-medium text-ink">{mine.adminName}</p>
-          </div>
-        </Card>
+        <div className="flex flex-col gap-4">
+          <Card className="flex flex-col gap-4">
+            <div>
+              <p className="text-sm text-ink-muted">Xomashyo turi</p>
+              <p className="text-lg font-semibold text-brand-dark">{mine.rawMaterialType}</p>
+            </div>
+            <div>
+              <p className="text-sm text-ink-muted">Hajm</p>
+              <p className="text-lg font-semibold text-brand-dark">{mine.volume}</p>
+            </div>
+            <div>
+              <p className="text-sm text-ink-muted">E'lon beruvchi</p>
+              <p className="text-sm font-medium text-ink">{mine.adminName}</p>
+            </div>
+          </Card>
+
+          <Card className="overflow-hidden !p-0">
+            <MineMap markers={markers} className="h-64 w-full" />
+          </Card>
+        </div>
       </div>
     </div>
   );

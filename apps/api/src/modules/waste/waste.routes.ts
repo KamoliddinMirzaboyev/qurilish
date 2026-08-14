@@ -287,7 +287,10 @@ wasteRouter.delete(
     const waste = await prisma.waste.findFirst({ where: { id: req.params.wasteId, deletedAt: null }, include: { images: true } });
     if (!waste) throw AppError.notFound("Chiqindi e'loni topilmadi.");
     if (waste.adminId !== req.user!.id) throw AppError.forbidden();
-    await prisma.waste.update({ where: { id: waste.id }, data: { deletedAt: new Date() } });
+    await prisma.$transaction([
+      prisma.waste.update({ where: { id: waste.id }, data: { deletedAt: new Date() } }),
+      prisma.wasteImage.deleteMany({ where: { wasteId: waste.id } }),
+    ]);
     await Promise.all(waste.images.map((img) => fs.unlink(path.join(uploadPublicRoot, img.storedName)).catch(() => undefined)));
     res.status(204).send();
   })

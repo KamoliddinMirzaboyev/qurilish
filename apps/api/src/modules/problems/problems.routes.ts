@@ -428,7 +428,10 @@ problemsRouter.delete(
       throw AppError.conflict("Takliflari mavjud muammoni o'chirib bo'lmaydi.");
     }
     const images = await prisma.problemImage.findMany({ where: { problemId: existing.id } });
-    await prisma.problem.update({ where: { id: existing.id }, data: { deletedAt: new Date() } });
+    await prisma.$transaction([
+      prisma.problem.update({ where: { id: existing.id }, data: { deletedAt: new Date() } }),
+      prisma.problemImage.deleteMany({ where: { problemId: existing.id } }),
+    ]);
     await Promise.all(images.map((img) => fs.unlink(path.join(uploadPublicRoot, img.storedName)).catch(() => undefined)));
     res.status(204).send();
   })

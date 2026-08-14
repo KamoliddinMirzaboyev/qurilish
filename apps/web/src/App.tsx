@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { AuthProvider } from "@/features/auth/AuthContext";
 import { Toaster } from "@/components/ui/toast";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PublicLayout } from "@/layouts/PublicLayout";
 import { AppShellLayout } from "@/layouts/AppShellLayout";
 import { RequireAuth, RequireGuest, RequireRole } from "@/routes/guards";
@@ -58,6 +59,7 @@ function LandingWithAuthModal() {
 export default function App() {
   return (
     <MotionConfig reducedMotion="user">
+      <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
@@ -121,6 +123,7 @@ export default function App() {
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>
+      </ErrorBoundary>
     </MotionConfig>
   );
 }

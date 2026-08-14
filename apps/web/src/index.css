@@ -27,6 +27,21 @@
     @apply bg-surface-page text-ink;
   }
 
+  .mine-pin {
+    background: transparent;
+    border: none;
+  }
+
+  .mine-pin-dot {
+    display: block;
+    height: 14px;
+    width: 14px;
+    border-radius: 9999px;
+    border: 2px solid #fff;
+    background: #0b3a6a;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+  }
+
   ::selection {
     @apply bg-brand-primary/20;
   }

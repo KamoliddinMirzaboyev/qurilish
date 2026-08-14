@@ -25,6 +25,8 @@ function toFormData(input: MineInput, images: File[]) {
   formData.append("rawMaterialType", input.rawMaterialType);
   formData.append("volume", input.volume);
   if (input.description) formData.append("description", input.description);
+  if (input.lat != null) formData.append("lat", String(input.lat));
+  if (input.lng != null) formData.append("lng", String(input.lng));
   images.forEach((file) => formData.append("images", file));
   return formData;
 }

@@ -5,7 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { adminUserStatusSchema, createAdminSchema, paginationQuerySchema, type AdminStats } from "@buildscience/shared";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { validateBody, validateQuery } from "../../middleware/validate.js";
-import { uploadPublicRoot } from "../../middleware/upload.js";
+import { uploadPublicRoot, uploadRoot } from "../../middleware/upload.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ok, paginate } from "../../utils/response.js";
 import { AppError } from "../../utils/AppError.js";
@@ -306,9 +306,13 @@ adminRouter.get(
 adminRouter.delete(
   "/problems/:problemId",
   asyncHandler(async (req, res) => {
-    const problem = await prisma.problem.findFirst({ where: { id: req.params.problemId, deletedAt: null } });
+    const problem = await prisma.problem.findFirst({ where: { id: req.params.problemId, deletedAt: null }, include: { images: true } });
     if (!problem) throw AppError.notFound("Muammo topilmadi.");
-    await prisma.problem.update({ where: { id: problem.id }, data: { deletedAt: new Date() } });
+    await prisma.$transaction([
+      prisma.problem.update({ where: { id: problem.id }, data: { deletedAt: new Date() } }),
+      prisma.problemImage.deleteMany({ where: { problemId: problem.id } }),
+    ]);
+    await Promise.all(problem.images.map((img) => fs.unlink(path.join(uploadPublicRoot, img.storedName)).catch(() => undefined)));
     res.status(204).send();
   })
 );
@@ -392,6 +396,9 @@ adminRouter.delete(
     const proposal = await prisma.proposal.findFirst({ where: { id: req.params.proposalId, deletedAt: null } });
     if (!proposal) throw AppError.notFound("Taklif topilmadi.");
     await prisma.proposal.update({ where: { id: proposal.id }, data: { deletedAt: new Date() } });
+    if (proposal.attachmentStoredName) {
+      await fs.unlink(path.join(uploadRoot, proposal.attachmentStoredName)).catch(() => undefined);
+    }
     res.status(204).send();
   })
 );
@@ -446,7 +453,10 @@ adminRouter.delete(
   asyncHandler(async (req, res) => {
     const waste = await prisma.waste.findFirst({ where: { id: req.params.wasteId, deletedAt: null }, include: { images: true } });
     if (!waste) throw AppError.notFound("Chiqindi e'loni topilmadi.");
-    await prisma.waste.update({ where: { id: waste.id }, data: { deletedAt: new Date() } });
+    await prisma.$transaction([
+      prisma.waste.update({ where: { id: waste.id }, data: { deletedAt: new Date() } }),
+      prisma.wasteImage.deleteMany({ where: { wasteId: waste.id } }),
+    ]);
     await Promise.all(waste.images.map((img) => fs.unlink(path.join(uploadPublicRoot, img.storedName)).catch(() => undefined)));
     res.status(204).send();
   })

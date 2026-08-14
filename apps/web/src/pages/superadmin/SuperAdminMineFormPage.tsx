@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,10 +9,12 @@ import { Card } from "@/components/ui/Card";
 import { FormSkeleton } from "@/components/ui/Skeleton";
 import { FormField, Input, Textarea } from "@/components/ui/Input";
 import { GalleryUploader } from "@/components/ui/GalleryUploader";
+import { MineMap } from "@/components/mines/MineMap";
 import { IconButton, Button } from "@/components/ui/Button";
 import { useMine, useCreateMine, useUpdateMine, useDeleteMineImage } from "@/features/mines/hooks";
 import { notify } from "@/components/ui/toast";
 import { ApiRequestError } from "@/lib/api";
+import { geocodeLocation } from "@/lib/geocode";
 
 export default function SuperAdminMineFormPage() {
   const { mineId } = useParams();
@@ -29,20 +31,45 @@ export default function SuperAdminMineFormPage() {
     handleSubmit,
     reset,
     setError,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm<MineInput>({ resolver: zodResolver(mineSchema) });
+  } = useForm<MineInput>({ resolver: zodResolver(mineSchema), defaultValues: { lat: null, lng: null } });
+  const lat = watch("lat");
+  const lng = watch("lng");
+  const location = watch("location");
+  const pickedRef = useRef(false);
+  const geocodedForRef = useRef<string | null>(null); // location text the current lat/lng already matches
 
   useEffect(() => {
     if (existing) {
       reset({
         name: existing.name,
         location: existing.location,
+        lat: existing.lat ?? null,
+        lng: existing.lng ?? null,
         rawMaterialType: existing.rawMaterialType,
         volume: existing.volume,
         description: existing.description ?? "",
       });
+      pickedRef.current = existing.lat != null && existing.lng != null;
+      geocodedForRef.current = existing.location;
     }
   }, [existing, reset]);
+
+  useEffect(() => {
+    if (!location || location.trim().length < 3) return;
+    if (pickedRef.current && location === geocodedForRef.current) return;
+    const timer = window.setTimeout(() => {
+      void geocodeLocation(location).then((geo) => {
+        if (!geo || pickedRef.current) return;
+        setValue("lat", geo.lat, { shouldValidate: true });
+        setValue("lng", geo.lng, { shouldValidate: true });
+        geocodedForRef.current = location;
+      });
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [location, setValue]);
 
   async function onSubmit(values: MineInput) {
     try {
@@ -93,6 +120,24 @@ export default function SuperAdminMineFormPage() {
           <FormField label="Joylashuvi" required error={errors.location?.message} htmlFor="location">
             <Input id="location" placeholder="Viloyat, tuman" {...register("location")} />
           </FormField>
+
+          <div className="sm:col-span-2">
+            <FormField label="Xarita" error={errors.lat?.message ?? errors.lng?.message}>
+              <p className="mb-2 text-xs text-ink-muted">Xaritani bosing — kon nuqtasi belgilanadi.</p>
+              <div className="overflow-hidden rounded-lg border border-surface-border">
+                <MineMap
+                  markers={lat != null && lng != null ? [{ id: "pick", lat, lng, label: "Kon joyi" }] : []}
+                  onPick={(nextLat, nextLng) => {
+                    pickedRef.current = true;
+                    geocodedForRef.current = location;
+                    setValue("lat", nextLat, { shouldValidate: true });
+                    setValue("lng", nextLng, { shouldValidate: true });
+                  }}
+                  className="h-72 w-full"
+                />
+              </div>
+            </FormField>
+          </div>
 
           <FormField label="Xomashyo turi" required error={errors.rawMaterialType?.message} htmlFor="rawMaterialType">
             <Input id="rawMaterialType" placeholder="Masalan: Ohaktosh" {...register("rawMaterialType")} />

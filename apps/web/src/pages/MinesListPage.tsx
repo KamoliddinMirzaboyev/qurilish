@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput, FilterBar } from "@/components/ui/SearchInput";
 import { Pagination } from "@/components/ui/Pagination";
 import { MineCard } from "@/components/mines/MineCard";
+import { MineMap } from "@/components/mines/MineMap";
+import { useMineMarkers } from "@/features/mines/useMineMarkers";
 import { CardGridSkeleton, EmptyState, ErrorState } from "@/components/ui/Card";
 import { formatNumber } from "@/lib/format";
 
@@ -23,6 +25,7 @@ export default function MinesListPage() {
   }
 
   const { data, isLoading, isError, refetch } = useMines({ search: debouncedSearch || undefined, page, pageSize: 12 });
+  const mapMarkers = useMineMarkers(data?.items ?? []);
 
   return (
     <div className="mx-auto max-w-content px-4 py-10">
@@ -35,6 +38,12 @@ export default function MinesListPage() {
           </div>
         </FilterBar>
       </div>
+
+      {!isLoading && !isError && (data?.items.length ?? 0) > 0 && (
+        <div className="mt-6 overflow-hidden rounded-lg border border-surface-border">
+          <MineMap markers={mapMarkers} className="h-80 w-full" />
+        </div>
+      )}
 
       <p className="mt-4 text-sm text-ink-muted">{data ? `${formatNumber(data.total)} ta natija` : ""}</p>
 

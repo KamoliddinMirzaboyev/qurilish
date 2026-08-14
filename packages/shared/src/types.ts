@@ -137,6 +137,8 @@ export interface MineListItem {
   id: string;
   name: string;
   location: string;
+  lat: number | null;
+  lng: number | null;
   rawMaterialType: string;
   volume: string;
   coverImageUrl: string | null;
@@ -151,6 +153,8 @@ export interface MineDetail {
   name: string;
   description: string | null;
   location: string;
+  lat: number | null;
+  lng: number | null;
   rawMaterialType: string;
   volume: string;
   images: GalleryImage[];

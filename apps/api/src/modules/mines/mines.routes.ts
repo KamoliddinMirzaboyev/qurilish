@@ -136,6 +136,8 @@ minesRouter.post(
         name: parsed.data.name,
         description: parsed.data.description || null,
         location: parsed.data.location,
+        lat: parsed.data.lat,
+        lng: parsed.data.lng,
         rawMaterialType: parsed.data.rawMaterialType,
         volume: parsed.data.volume,
         images: {
@@ -209,6 +211,8 @@ minesRouter.patch(
         name: parsed.data.name,
         description: parsed.data.description || null,
         location: parsed.data.location,
+        lat: parsed.data.lat,
+        lng: parsed.data.lng,
         rawMaterialType: parsed.data.rawMaterialType,
         volume: parsed.data.volume,
         images: {
@@ -281,7 +285,10 @@ minesRouter.delete(
   asyncHandler(async (req, res) => {
     const mine = await prisma.mine.findFirst({ where: { id: req.params.mineId, deletedAt: null }, include: { images: true } });
     if (!mine) throw AppError.notFound("Kon topilmadi.");
-    await prisma.mine.update({ where: { id: mine.id }, data: { deletedAt: new Date() } });
+    await prisma.$transaction([
+      prisma.mine.update({ where: { id: mine.id }, data: { deletedAt: new Date() } }),
+      prisma.mineImage.deleteMany({ where: { mineId: mine.id } }),
+    ]);
     await Promise.all(mine.images.map((img) => fs.unlink(path.join(uploadPublicRoot, img.storedName)).catch(() => undefined)));
     res.status(204).send();
   })

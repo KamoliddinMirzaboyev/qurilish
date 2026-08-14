@@ -244,6 +244,18 @@ export const mineSchema = z.object({
     .trim()
     .min(MINE_LIMITS.VOLUME_MIN, "Hajmni kiriting.")
     .max(MINE_LIMITS.VOLUME_MAX, `Hajm ${MINE_LIMITS.VOLUME_MAX} ta belgidan oshmasligi kerak.`),
+  lat: z.preprocess(
+    (v) => (v === "" || v === undefined || v === null || (typeof v === "number" && Number.isNaN(v)) ? null : Number(v)),
+    z.number({ invalid_type_error: "Kenglik noto'g'ri." }).min(-90, "Kenglik noto'g'ri.").max(90, "Kenglik noto'g'ri.").nullable(),
+  ),
+  lng: z.preprocess(
+    (v) => (v === "" || v === undefined || v === null || (typeof v === "number" && Number.isNaN(v)) ? null : Number(v)),
+    z.number({ invalid_type_error: "Uzunlik noto'g'ri." }).min(-180, "Uzunlik noto'g'ri.").max(180, "Uzunlik noto'g'ri.").nullable(),
+  ),
+}).superRefine((val, ctx) => {
+  if ((val.lat == null) !== (val.lng == null)) {
+    ctx.addIssue({ code: "custom", path: val.lat == null ? ["lat"] : ["lng"], message: "Xarita nuqtasini to'liq belgilang." });
+  }
 });
 export type MineInput = z.infer<typeof mineSchema>;
 
