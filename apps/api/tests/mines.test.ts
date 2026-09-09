@@ -42,10 +42,28 @@ describe("mines", () => {
     expect(res.status).toBe(401);
   });
 
-  it("rejects an ADMIN (firma) from creating a mine — SUPERADMIN only", async () => {
+  it("rejects an ADMIN (firma) from creating a mine on /admin/mines", async () => {
     const { agent: admin } = await registerCompany();
     const res = await createMine(admin);
     expect(res.status).toBe(403);
+  });
+
+  it("lets an ADMIN create and manage own mine via /company/mines", async () => {
+    const { agent: admin } = await registerCompany();
+    const createRes = await admin
+      .post("/api/company/mines")
+      .field("name", "Firma Toshkoni")
+      .field("location", "Toshkent viloyati")
+      .field("rawMaterialType", "Tosh")
+      .field("volume", "10 000 m³");
+    expect(createRes.status).toBe(201);
+
+    const listRes = await admin.get("/api/company/mines");
+    expect(listRes.status).toBe(200);
+    expect(listRes.body.data.items.some((m: { id: string }) => m.id === createRes.body.data.id)).toBe(true);
+
+    const deleteRes = await admin.delete(`/api/company/mines/${createRes.body.data.id}`);
+    expect(deleteRes.status).toBe(204);
   });
 
   it("lets a SUPERADMIN delete a mine", async () => {

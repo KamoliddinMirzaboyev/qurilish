@@ -36,14 +36,35 @@ export function useNotificationStream() {
     if (!user) return;
 
     const url = `${API_BASE}/notifications/stream`;
-    const source = new EventSource(url, { withCredentials: true });
+    let source: EventSource | null = null;
+    let closed = false;
+    let retry = 0;
+    let timer: number | undefined;
 
-    source.addEventListener("notification", (event) => {
-      const data = JSON.parse((event as MessageEvent).data) as AppNotification;
-      notify.info(data.title);
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    });
+    function connect() {
+      if (closed) return;
+      source = new EventSource(url, { withCredentials: true });
+      source.addEventListener("notification", (event) => {
+        try {
+          const data = JSON.parse((event as MessageEvent).data) as AppNotification;
+          notify.info(data.title);
+          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        } catch {
+          // noto'g'ri SSE payload
+        }
+      });
+      source.onerror = () => {
+        source?.close();
+        retry = Math.min(retry + 1, 6);
+        timer = window.setTimeout(connect, 1000 * 2 ** retry);
+      };
+    }
 
-    return () => source.close();
+    connect();
+    return () => {
+      closed = true;
+      if (timer) window.clearTimeout(timer);
+      source?.close();
+    };
   }, [user, queryClient]);
 }

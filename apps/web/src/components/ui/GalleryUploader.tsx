@@ -3,6 +3,8 @@ import { Plus, X } from "lucide-react";
 import { GALLERY_UPLOAD } from "@buildscience/shared";
 import { IconButton } from "./Button";
 
+import { notify } from "./toast";
+
 export function GalleryUploader({
   files,
   onChange,
@@ -24,7 +26,35 @@ export function GalleryUploader({
 
   function addFiles(selected: FileList | null) {
     if (!selected) return;
-    const next = [...files, ...Array.from(selected)].slice(0, max);
+    const maxBytes = GALLERY_UPLOAD.MAX_SIZE_MB * 1024 * 1024;
+    const accepted: File[] = [];
+    let hasInvalid = false;
+    let hasOversized = false;
+
+    for (const file of Array.from(selected)) {
+      const okType = file.type === "image/jpeg" || file.type === "image/png" || file.type === "image/jpg";
+      if (!okType) {
+        hasInvalid = true;
+        continue;
+      }
+      if (file.size > maxBytes) {
+        hasOversized = true;
+        continue;
+      }
+      accepted.push(file);
+    }
+
+    if (hasInvalid) {
+      notify.error("Faqat JPG va PNG formatidagi rasmlar qabul qilinadi.");
+    }
+    if (hasOversized) {
+      notify.error(`Rasm hajmi ${GALLERY_UPLOAD.MAX_SIZE_MB} MB dan oshmasligi kerak.`);
+    }
+    if (files.length + accepted.length > max) {
+      notify.error(`Maksimal ${max} ta rasm yuklash mumkin.`);
+    }
+
+    const next = [...files, ...accepted].slice(0, max);
     onChange(next);
   }
 

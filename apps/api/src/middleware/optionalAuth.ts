@@ -7,6 +7,7 @@ export const optionalAuth = asyncHandler(async (req: Request, _res: Response, ne
   if (userId) {
     const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null, status: "ACTIVE" } });
     if (user) req.user = user;
+    else req.session.userId = undefined;
   }
   next();
 });

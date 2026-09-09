@@ -28,7 +28,7 @@ export function useCompanyProposals(status: string, page: number) {
 export function useMyProposals(enabled = true) {
   return useQuery({
     queryKey: ["my-proposals"],
-    queryFn: () => api.get<{ items: ProposalListItem[] }>("/proposals/mine"),
+    queryFn: () => api.get<Paginated<ProposalListItem>>(`/proposals/mine${toQueryString({ page: 1, pageSize: 50 })}`),
     enabled,
   });
 }
@@ -48,6 +48,7 @@ export function useSubmitProposal(problemId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-proposals"] });
       queryClient.invalidateQueries({ queryKey: ["problem", problemId] });
+      queryClient.invalidateQueries({ queryKey: ["problem-proposals", problemId] });
     },
   });
 }
@@ -68,7 +69,10 @@ export function useWithdrawProposal() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (proposalId: string) => api.post<ProposalListItem>(`/proposals/${proposalId}/withdraw`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["my-proposals"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-proposals"] });
+      queryClient.invalidateQueries({ queryKey: ["problems"] });
+    },
   });
 }
 
@@ -81,6 +85,9 @@ export function useAcceptProposal(problemId: string) {
       queryClient.invalidateQueries({ queryKey: ["problem", problemId] });
       queryClient.invalidateQueries({ queryKey: ["company-problems"] });
       queryClient.invalidateQueries({ queryKey: ["company-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["company-proposals"] });
+      queryClient.invalidateQueries({ queryKey: ["company-recent-proposals"] });
+      queryClient.invalidateQueries({ queryKey: ["connections"] });
     },
   });
 }

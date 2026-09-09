@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { AuthUser } from "@buildscience/shared";
-import { api, ApiRequestError } from "@/lib/api";
+import { api, ApiRequestError, setCsrfToken, setUnauthorizedHandler } from "@/lib/api";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -17,6 +17,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function refresh() {
     try {
+      const csrfRes = await api.get<{ csrfToken: string }>("/auth/csrf").catch(() => null);
+      if (csrfRes?.csrfToken) {
+        setCsrfToken(csrfRes.csrfToken);
+      }
       const me = await api.get<AuthUser>("/auth/me");
       setUser(me);
     } catch (err) {
@@ -29,7 +33,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    refresh();
+    void refresh();
+  }, []);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => setUser(null));
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   return <AuthContext.Provider value={{ user, isLoading, setUser, refresh }}>{children}</AuthContext.Provider>;

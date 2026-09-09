@@ -27,10 +27,11 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
   asLink?: boolean;
   to?: string;
+  state?: unknown;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = "primary", size = "md", isLoading, className, children, disabled, asLink, to, ...props }, ref) => {
+  ({ variant = "primary", size = "md", isLoading, className, children, disabled, asLink, to, state, ...props }, ref) => {
     const classes = clsx(
       "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60",
       variantClasses[variant],
@@ -40,7 +41,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     if (asLink && to) {
       return (
-        <Link to={to} className={classes}>
+        <Link to={to} state={state} className={classes}>
           {children}
         </Link>
       );

@@ -7,11 +7,12 @@ import { Pagination } from "@/components/ui/Pagination";
 import { WasteCard } from "@/components/waste/WasteCard";
 import { CardGridSkeleton, EmptyState, ErrorState } from "@/components/ui/Card";
 import { formatNumber } from "@/lib/format";
+import { pageFromSearch } from "@/lib/session";
 
 export default function WasteListPage() {
   const [params, setParams] = useSearchParams();
   const search = params.get("search") ?? "";
-  const page = Number(params.get("page") ?? 1);
+  const page = pageFromSearch(params.get("page"));
   const debouncedSearch = useDebounce(search);
 
   function updateParam(key: string, value: string) {

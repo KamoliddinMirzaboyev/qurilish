@@ -12,6 +12,14 @@ const isProduction = process.env.NODE_ENV === "production";
 // Seed ishga tushganda o'zi tekshiradi (qarang: prisma/seed.ts).
 const rawWebOrigin = (process.env.WEB_ORIGIN as string).trim();
 
+if (isProduction && (rawWebOrigin === "*" || rawWebOrigin.length === 0)) {
+  throw new Error("Production da WEB_ORIGIN aniq origin ro'yxati bo'lishi shart (* taqiqlanadi).");
+}
+
+if (isProduction && (process.env.SESSION_SECRET ?? "").includes("change-this-to-a-long-random-string")) {
+  throw new Error("Production da SESSION_SECRET default qiymat bo'lishi mumkin emas.");
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   isProduction,
@@ -21,8 +29,7 @@ export const env = {
   sessionCookieName: process.env.SESSION_COOKIE_NAME ?? "bs_session",
   /**
    * CORS siyosati:
-   *  - "*"  → har qanday origin qabul qilinadi (credentials bilan ishlashi uchun
-   *           so'rov origin'i aks ettiriladi — literal "*" emas).
+   *  - "*"  → faqat non-prod: har qanday origin aks ettiriladi.
    *  - vergul bilan ajratilgan ro'yxat → faqat shu originlar.
    */
   corsOrigin: rawWebOrigin === "*" ? true : rawWebOrigin.split(",").map((o) => o.trim()).filter(Boolean),

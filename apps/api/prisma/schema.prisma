@@ -136,7 +136,6 @@ model Proposal {
   withdrawnAt             DateTime?
   deletedAt               DateTime?
 
-  @@unique([problemId, scientistId])
   @@index([problemId])
   @@index([scientistId])
   @@index([status])

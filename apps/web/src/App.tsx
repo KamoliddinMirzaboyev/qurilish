@@ -19,6 +19,8 @@ const WasteListPage = lazy(() => import("@/pages/WasteListPage"));
 const WasteDetailPage = lazy(() => import("@/pages/WasteDetailPage"));
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/RegisterPage"));
+const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
 const ForbiddenPage = lazy(() => import("@/pages/ForbiddenPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 
@@ -29,6 +31,7 @@ const AdminProblemProposalsPage = lazy(() => import("@/pages/admin/AdminProblemP
 const AdminProposalsPage = lazy(() => import("@/pages/admin/AdminProposalsPage"));
 const AdminWastePage = lazy(() => import("@/pages/admin/AdminWastePage"));
 const AdminWasteFormPage = lazy(() => import("@/pages/admin/AdminWasteFormPage"));
+const AdminMinesPage = lazy(() => import("@/pages/admin/AdminMinesPage"));
 
 const UserDashboardPage = lazy(() => import("@/pages/user/UserDashboardPage"));
 const UserProposalsPage = lazy(() => import("@/pages/user/UserProposalsPage"));
@@ -70,6 +73,8 @@ export default function App() {
                     <Route element={<RequireGuest />}>
                       <Route path="login" element={<LoginPage />} />
                       <Route path="register" element={<RegisterPage />} />
+                      <Route path="forgot-password" element={<ForgotPasswordPage />} />
+                      <Route path="reset-password" element={<ResetPasswordPage />} />
                     </Route>
                   </Route>
                   <Route path="/problems" element={<ProblemsListPage />} />
@@ -97,6 +102,9 @@ export default function App() {
                       <Route path="/app/admin/waste" element={<AdminWastePage />} />
                       <Route path="/app/admin/waste/new" element={<AdminWasteFormPage />} />
                       <Route path="/app/admin/waste/:wasteId/edit" element={<AdminWasteFormPage />} />
+                      <Route path="/app/admin/mines" element={<AdminMinesPage />} />
+                      <Route path="/app/admin/mines/new" element={<SuperAdminMineFormPage />} />
+                      <Route path="/app/admin/mines/:mineId/edit" element={<SuperAdminMineFormPage />} />
                     </Route>
 
                     <Route element={<RequireRole roles={["USER"]} />}>

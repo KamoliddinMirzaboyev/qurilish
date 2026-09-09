@@ -31,39 +31,63 @@ function toFormData(input: MineInput, images: File[]) {
   return formData;
 }
 
-/** SUPERADMIN — /admin/mines orqali yangi kon joylashtiradi. */
-export function useCreateMine() {
+export type MineScope = "admin" | "company";
+
+function mineBase(scope: MineScope) {
+  return scope === "company" ? "/company/mines" : "/admin/mines";
+}
+
+export function useAdminOwnMines(page: number) {
+  return useQuery({
+    queryKey: ["admin-own-mines", page],
+    queryFn: () => api.get<Paginated<MineDetail>>(`/company/mines${toQueryString({ page, pageSize: 20 })}`),
+  });
+}
+
+export function useCreateMine(scope: MineScope = "admin") {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ input, images }: { input: MineInput; images: File[] }) =>
-      api.postForm<MineDetail>("/admin/mines", toFormData(input, images)),
+      api.postForm<MineDetail>(mineBase(scope), toFormData(input, images)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-mines-moderation"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-own-mines"] });
       queryClient.invalidateQueries({ queryKey: ["mines"] });
     },
   });
 }
 
-/** SUPERADMIN — mavjud konni tahrirlaydi, yangi rasmlarni qo'shimcha qiladi. */
-export function useUpdateMine(mineId: string) {
+export function useUpdateMine(mineId: string, scope: MineScope = "admin") {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ input, images }: { input: MineInput; images: File[] }) =>
-      api.patchForm<MineDetail>(`/admin/mines/${mineId}`, toFormData(input, images)),
+      api.patchForm<MineDetail>(`${mineBase(scope)}/${mineId}`, toFormData(input, images)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-mines-moderation"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-own-mines"] });
       queryClient.invalidateQueries({ queryKey: ["mines"] });
       queryClient.invalidateQueries({ queryKey: ["mine", mineId] });
     },
   });
 }
 
-export function useDeleteMineImage(mineId: string) {
+export function useDeleteMineImage(mineId: string, scope: MineScope = "admin") {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (imageId: string) => api.delete(`/admin/mines/${mineId}/images/${imageId}`),
+    mutationFn: (imageId: string) => api.delete(`${mineBase(scope)}/${mineId}/images/${imageId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mine", mineId] });
+      queryClient.invalidateQueries({ queryKey: ["mines"] });
+    },
+  });
+}
+
+export function useDeleteOwnMine() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (mineId: string) => api.delete(`/company/mines/${mineId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-own-mines"] });
       queryClient.invalidateQueries({ queryKey: ["mines"] });
     },
   });

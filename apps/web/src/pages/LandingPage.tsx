@@ -32,6 +32,7 @@ export default function LandingPage() {
   }, [location.hash]);
 
   const primaryHref = user?.role === "ADMIN" ? "/app/admin/problems/new" : user?.role === "USER" ? "/problems" : "/register";
+  const primaryLabel = user?.role === "ADMIN" ? "Muammo joylashtirish" : user?.role === "USER" ? "Taklif yuborish" : "Ro'yxatdan o'tish";
 
   const counters = [
     { label: "Ochiq muammolar", value: stats ? formatNumber(stats.openProblems) : "—" },
@@ -61,7 +62,7 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" asLink to={primaryHref}>
-                Muammo joylashtirish
+                {primaryLabel}
               </Button>
               <Button size="lg" variant="outlineOnDark" asLink to="/problems">
                 Muammolarni ko‘rish

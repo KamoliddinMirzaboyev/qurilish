@@ -9,11 +9,12 @@ import { MineMap } from "@/components/mines/MineMap";
 import { useMineMarkers } from "@/features/mines/useMineMarkers";
 import { CardGridSkeleton, EmptyState, ErrorState } from "@/components/ui/Card";
 import { formatNumber } from "@/lib/format";
+import { pageFromSearch } from "@/lib/session";
 
 export default function MinesListPage() {
   const [params, setParams] = useSearchParams();
   const search = params.get("search") ?? "";
-  const page = Number(params.get("page") ?? 1);
+  const page = pageFromSearch(params.get("page"));
   const debouncedSearch = useDebounce(search);
 
   function updateParam(key: string, value: string) {

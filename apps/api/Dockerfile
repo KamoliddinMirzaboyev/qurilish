@@ -26,6 +26,7 @@ COPY --from=build /repo/apps/api/prisma /repo/apps/api/prisma
 COPY --from=build /repo/apps/api/package.json /repo/apps/api/package.json
 
 WORKDIR /repo/apps/api
-RUN mkdir -p uploads
+RUN mkdir -p uploads && chown -R node:node /repo
+USER node
 EXPOSE 4000
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]

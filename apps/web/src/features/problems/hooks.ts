@@ -19,10 +19,10 @@ export function useProblems(filters: ProblemFilters) {
   });
 }
 
-export function useCompanyProblems(status: string, page: number) {
+export function useCompanyProblems(status: string, page: number, pageSize = 20) {
   return useQuery({
-    queryKey: ["company-problems", status, page],
-    queryFn: () => api.get<Paginated<ProblemListItem>>(`/company/problems${toQueryString({ status, page, pageSize: 20 })}`),
+    queryKey: ["company-problems", status, page, pageSize],
+    queryFn: () => api.get<Paginated<ProblemListItem>>(`/company/problems${toQueryString({ status, page, pageSize })}`),
   });
 }
 

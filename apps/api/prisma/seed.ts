@@ -8,23 +8,42 @@ async function hash(password: string) {
 }
 
 async function main() {
-  const superadminEmail = (process.env.ADMIN_EMAIL ?? "superadmin").toLowerCase();
-  const superadminPassword = process.env.ADMIN_PASSWORD ?? "admin1234";
+  const isProduction = process.env.NODE_ENV === "production";
+  const seedDemo = process.env.SEED_DEMO === "1";
+  const seedReset = process.env.SEED_RESET === "1";
+
+  const superadminEmail = (process.env.ADMIN_EMAIL ?? "").toLowerCase();
+  const superadminPassword = process.env.ADMIN_PASSWORD ?? "";
   const superadminName = process.env.ADMIN_NAME ?? "BuildScience Hokimiyat";
   const superadminPhone = process.env.ADMIN_PHONE ?? "+998901234567";
 
+  if (isProduction) {
+    if (!superadminEmail || !superadminPassword || superadminPassword.length < 8) {
+      throw new Error("Production seed: ADMIN_EMAIL va kuchli ADMIN_PASSWORD majburiy.");
+    }
+  }
+
+  const email = superadminEmail || "superadmin";
+  const password = superadminPassword || "Admin12345!";
+
   await prisma.user.upsert({
-    where: { email: superadminEmail },
+    where: { email },
     update: {},
     create: {
       role: Role.SUPERADMIN,
       name: superadminName,
-      email: superadminEmail,
+      email,
       phone: superadminPhone,
-      passwordHash: await hash(superadminPassword),
+      passwordHash: await hash(password),
       status: "ACTIVE",
     },
   });
+
+  if (isProduction && !seedDemo) {
+    console.log("NODE_ENV=production: faqat SUPERADMIN yaratildi (demo akkauntlar o'tkazib yuborildi).");
+    console.log("Demo ma'lumot uchun SEED_DEMO=1 va SEED_RESET=1 ni aniq belgilang.");
+    return;
+  }
 
   const adminPassword = await hash("Company12345!");
   const userPassword = await hash("Scientist12345!");
@@ -103,17 +122,16 @@ async function main() {
     },
   });
 
-  console.log("Accounts seeded:");
-  console.log(`  Superadmin: ${superadminEmail} / ${superadminPassword}`);
-  console.log("  Admin A:    qurilish-invest@buildscience.local / Company12345!");
-  console.log("  Admin B:    betonstroy@buildscience.local / Company12345!");
-  console.log("  User1:      aziz.karimov@buildscience.local / Scientist12345!");
-  console.log("  User2:      nodira.yusupova@buildscience.local / Scientist12345!");
-  console.log("  User3:      bekzod.rahimov@buildscience.local / Scientist12345!");
+  if (!isProduction) {
+    console.log("Accounts seeded:");
+    console.log(`  Superadmin: ${email}`);
+    console.log("  Admin A:    qurilish-invest@buildscience.local");
+    console.log("  Admin B:    betonstroy@buildscience.local");
+    console.log("  Users:      aziz.karimov / nodira.yusupova / bekzod.rahimov @buildscience.local");
+  }
 
-  if (process.env.NODE_ENV === "production" && process.env.SEED_FORCE !== "1") {
-    console.log("NODE_ENV=production: skipping sample problems/mines/waste (accounts above are seeded).");
-    console.log("Set SEED_FORCE=1 to force-reset sample data in production.");
+  if (!seedReset) {
+    console.log("Namuna muammo/kon/chiqindi o'tkazib yuborildi (SEED_RESET=1 kerak).");
     return;
   }
 
@@ -137,7 +155,7 @@ async function main() {
     },
   });
 
-  const problem2 = await prisma.problem.create({
+  await prisma.problem.create({
     data: {
       companyId: adminA.id,
       title: "Sement sarfini kamaytirish bo'yicha texnologik yechim",
@@ -149,7 +167,7 @@ async function main() {
     },
   });
 
-  const problem3 = await prisma.problem.create({
+  await prisma.problem.create({
     data: {
       companyId: adminB.id,
       title: "Energiya samaradorligi yuqori g'isht ishlab chiqarish",

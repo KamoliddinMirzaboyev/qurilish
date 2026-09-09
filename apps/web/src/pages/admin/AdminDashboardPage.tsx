@@ -12,7 +12,7 @@ import { formatDate, formatMoney, formatProposalCount } from "@/lib/format";
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
-  const { data: problems, isLoading } = useCompanyProblems("ALL", 1);
+  const { data: problems, isLoading } = useCompanyProblems("ALL", 1, 5);
   const { data: recentProposals } = useCompanyRecentProposals();
   const { data: stats, isLoading: statsLoading } = useCompanyStats();
 
@@ -25,6 +25,9 @@ export default function AdminDashboardPage() {
         title={`Xush kelibsiz, ${user?.name}`}
         action={
           <div className="flex flex-wrap gap-2">
+            <Button asLink to="/app/admin/mines/new" variant="outline">
+              <Plus size={16} /> Kon qo'shish
+            </Button>
             <Button asLink to="/app/admin/waste/new" variant="outline">
               <Plus size={16} /> Chiqindi qo'shish
             </Button>
@@ -70,7 +73,7 @@ export default function AdminDashboardPage() {
                 items.slice(0, 5).map((problem) => (
                   <Card key={problem.id} className="flex flex-wrap items-center justify-between gap-3 transition-shadow hover:shadow-md">
                     <div>
-                      <Link to={`/problems/${problem.id}`} className="font-medium text-brand-dark hover:text-brand-primary">
+                      <Link to={`/app/admin/problems/${problem.id}/proposals`} className="font-medium text-brand-dark hover:text-brand-primary">
                         {problem.title}
                       </Link>
                       <p className="text-sm text-ink-muted">
@@ -85,7 +88,7 @@ export default function AdminDashboardPage() {
           </div>
 
           <div>
-            <SectionHeader title="Yangi takliflar" />
+            <SectionHeader title="Yangi takliflar" action={<Link to="/app/admin/proposals" className="text-sm font-medium text-brand-primary hover:underline">Barchasi</Link>} />
             <div className="mt-4 flex flex-col gap-3">
               {!recentProposals ? (
                 <ListSkeleton count={2} />
@@ -93,7 +96,9 @@ export default function AdminDashboardPage() {
                 recentProposals.items.map((proposal) => (
                   <Card key={proposal.id} className="flex flex-wrap items-center justify-between gap-3 transition-shadow hover:shadow-md">
                     <div>
-                      <p className="font-medium text-brand-dark">{proposal.scientistName}</p>
+                      <Link to={`/app/admin/problems/${proposal.problemId}/proposals`} className="font-medium text-brand-dark hover:text-brand-primary">
+                        {proposal.scientistName}
+                      </Link>
                       <p className="text-sm text-ink-muted">{proposal.problemTitle}</p>
                     </div>
                     <div className="text-right text-sm text-ink-muted">
@@ -105,7 +110,7 @@ export default function AdminDashboardPage() {
                   </Card>
                 ))
               ) : (
-                <EmptyState title="Ushbu muammoga hali taklif kelmagan." />
+                <EmptyState title="Hozircha yangi taklif yo'q." />
               )}
             </div>
           </div>

@@ -40,7 +40,17 @@ export function FileUploader({ file, onChange }: { file: File | null; onChange: 
         type="file"
         accept=".pdf,.jpg,.jpeg,.png"
         className="hidden"
-        onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+        onChange={(e) => {
+          const next = e.target.files?.[0] ?? null;
+          if (!next) {
+            onChange(null);
+            return;
+          }
+          const maxBytes = 10 * 1024 * 1024;
+          const okType = ["application/pdf", "image/jpeg", "image/png"].includes(next.type);
+          if (!okType || next.size > maxBytes) return;
+          onChange(next);
+        }}
       />
       <p className="mt-1.5 text-sm text-ink-muted">PDF, JPG yoki PNG. Maksimal hajm: 10 MB.</p>
     </div>

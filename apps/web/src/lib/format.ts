@@ -17,6 +17,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat("uz-UZ", {
 export function formatMoney(value: string | number | null | undefined): string {
   if (value == null) return "Kelishilgan holda";
   const num = typeof value === "string" ? Number(value) : value;
+  if (!Number.isFinite(num)) return "Kelishilgan holda";
   return `${numberFormatter.format(num)} so'm`;
 }
 

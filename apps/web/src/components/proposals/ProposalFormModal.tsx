@@ -98,6 +98,12 @@ export function ProposalFormModal({ open, onClose, problemId, existing, onSucces
         )}
 
         <FormField label="Fayl biriktirish">
+          {isEdit && existing?.attachmentOriginalName && !file && (
+            <div className="mb-2 flex items-center justify-between rounded-lg border border-surface-border bg-slate-50 px-3 py-2 text-xs text-ink-muted">
+              <span>Hozirgi fayl: <strong className="text-ink">{existing.attachmentOriginalName}</strong></span>
+              <span className="text-[11px] text-brand-primary">O'zgartirish uchun yangi fayl tanlang</span>
+            </div>
+          )}
           <FileUploader file={file} onChange={setFile} />
         </FormField>
 

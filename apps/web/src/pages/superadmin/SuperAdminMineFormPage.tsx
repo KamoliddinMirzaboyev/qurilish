@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Save, Ban } from "lucide-react";
@@ -18,12 +18,15 @@ import { geocodeLocation } from "@/lib/geocode";
 
 export default function SuperAdminMineFormPage() {
   const { mineId } = useParams();
+  const { pathname } = useLocation();
+  const scope = pathname.startsWith("/app/admin") ? "company" : "admin";
+  const listPath = scope === "company" ? "/app/admin/mines" : "/superadmin/mines";
   const isEdit = !!mineId;
   const navigate = useNavigate();
   const { data: existing, isLoading } = useMine(mineId);
-  const createMutation = useCreateMine();
-  const updateMutation = useUpdateMine(mineId ?? "");
-  const deleteImageMutation = useDeleteMineImage(mineId ?? "");
+  const createMutation = useCreateMine(scope);
+  const updateMutation = useUpdateMine(mineId ?? "", scope);
+  const deleteImageMutation = useDeleteMineImage(mineId ?? "", scope);
   const [images, setImages] = useState<File[]>([]);
 
   const {
@@ -59,6 +62,9 @@ export default function SuperAdminMineFormPage() {
 
   useEffect(() => {
     if (!location || location.trim().length < 3) return;
+    if (pickedRef.current && location !== geocodedForRef.current) {
+      pickedRef.current = false;
+    }
     if (pickedRef.current && location === geocodedForRef.current) return;
     const timer = window.setTimeout(() => {
       void geocodeLocation(location).then((geo) => {
@@ -76,11 +82,11 @@ export default function SuperAdminMineFormPage() {
       if (isEdit) {
         await updateMutation.mutateAsync({ input: values, images });
         notify.success("O'zgarishlar saqlandi.");
-        navigate(`/mines/${mineId}`);
+        navigate(listPath);
       } else {
-        const created = await createMutation.mutateAsync({ input: values, images });
+        await createMutation.mutateAsync({ input: values, images });
         notify.success("Kon joylashtirildi.");
-        navigate(`/mines/${created.id}`);
+        navigate(listPath);
       }
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -181,7 +187,7 @@ export default function SuperAdminMineFormPage() {
           </FormField>
 
           <div className="mt-1 flex justify-end gap-3 sm:col-span-2">
-            <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+            <Button type="button" variant="outline" onClick={() => navigate(listPath)}>
               <Ban size={16} /> Bekor qilish
             </Button>
             <Button type="submit" isLoading={isSubmitting}>

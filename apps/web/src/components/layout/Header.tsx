@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { UserAvatar } from "@/components/ui/Avatar";
 import { DropdownMenu, MenuItem } from "@/components/ui/Menu";
 import { useAuth } from "@/features/auth/AuthContext";
-import { api } from "@/lib/api";
+import { logoutClient } from "@/lib/session";
 import { dashboardPathForRole } from "@/routes/paths";
 
 const navLinks = [
@@ -24,7 +24,7 @@ export function Header() {
   const navigate = useNavigate();
 
   async function handleLogout() {
-    await api.post("/auth/logout");
+    await logoutClient();
     setUser(null);
     navigate("/");
   }

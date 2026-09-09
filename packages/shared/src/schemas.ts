@@ -18,7 +18,10 @@ const phone = z
   .regex(PHONE_REGEX, "Telefon raqami +998XXXXXXXXX formatida bo'lishi kerak.");
 const password = z
   .string({ required_error: "Parolni kiriting." })
-  .min(LIMITS.PASSWORD_MIN, `Parol kamida ${LIMITS.PASSWORD_MIN} ta belgidan iborat bo'lishi kerak.`);
+  .min(LIMITS.PASSWORD_MIN, `Parol kamida ${LIMITS.PASSWORD_MIN} ta belgidan iborat bo'lishi kerak.`)
+  .max(LIMITS.PASSWORD_MAX, `Parol ${LIMITS.PASSWORD_MAX} ta belgidan oshmasligi kerak.`)
+  .regex(/[A-Za-z]/, "Parolda kamida bitta harf bo'lishi kerak.")
+  .regex(/\d/, "Parolda kamida bitta raqam bo'lishi kerak.");
 const organization = z
   .string({ invalid_type_error: "Tashkilot nomi matn bo'lishi kerak." })
   .trim()
@@ -100,10 +103,32 @@ export const updateLoginSchema = z.object({
     .trim()
     .toLowerCase()
     .min(3, "Login kamida 3 ta belgidan iborat bo'lishi kerak.")
-    .max(255, "Login 255 ta belgidan oshmasligi kerak."),
+    .max(255, "Login 255 ta belgidan oshmasligi kerak.")
+    .regex(/^[a-z0-9._@+-]+$/, "Login faqat harf, raqam va . _ @ + - belgilaridan iborat bo'lishi kerak."),
   currentPassword: z.string({ required_error: "Joriy parolni kiriting." }).min(1, "Joriy parolni kiriting."),
 });
 export type UpdateLoginInput = z.infer<typeof updateLoginSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string({ required_error: "Email kiriting." })
+    .trim()
+    .toLowerCase()
+    .email("To'g'ri email manzilini kiriting."),
+});
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string({ required_error: "Tiklash kodi yoki token talab qilinadi." }).min(1, "Token talab qilinadi."),
+    newPassword: password,
+    confirmPassword: z.string({ required_error: "Yangi parolni tasdiqlang." }),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Parollar mos kelmadi.",
+    path: ["confirmPassword"],
+  });
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 const categoryEnum = z.enum(
   [
@@ -158,6 +183,7 @@ export const createProblemSchema = z
 export type CreateProblemInput = z.infer<typeof createProblemSchema>;
 
 export const updateProblemSchema = createProblemSchema;
+export type UpdateProblemInput = CreateProblemInput;
 
 export const problemQuerySchema = z.object({
   search: z.string({ invalid_type_error: "Qidiruv matni noto'g'ri." }).trim().max(200, "Qidiruv matni 200 ta belgidan oshmasligi kerak.").optional(),
@@ -172,6 +198,7 @@ export const problemQuerySchema = z.object({
   pageSize: z.coerce.number({ invalid_type_error: "Sahifa hajmi noto'g'ri." }).int("Sahifa hajmi butun son bo'lishi kerak.").min(1, "Sahifa hajmi kamida 1 bo'lishi kerak.").max(PAGINATION.MAX_PAGE_SIZE, `Sahifa hajmi ${PAGINATION.MAX_PAGE_SIZE} dan oshmasligi kerak.`).default(PAGINATION.DEFAULT_PAGE_SIZE),
 });
 export type ProblemQueryInput = z.infer<typeof problemQuerySchema>;
+export type ProblemQuery = ProblemQueryInput;
 
 export const createProposalSchema = z
   .object({
@@ -188,7 +215,7 @@ export const createProposalSchema = z
       .int("Bajarish muddati butun son bo'lishi kerak.")
       .min(LIMITS.ESTIMATED_DAYS_MIN, "Bajarish muddati musbat son bo'lishi kerak.")
       .max(LIMITS.ESTIMATED_DAYS_MAX, `Bajarish muddati ${LIMITS.ESTIMATED_DAYS_MAX} kundan oshmasligi kerak.`),
-    priceNegotiable: z.coerce.boolean().default(false),
+    priceNegotiable: z.preprocess((v) => v === true || v === "true" || v === 1 || v === "1", z.boolean()).default(false),
     proposedPrice: z.coerce
       .number({ invalid_type_error: "Taklif narxini to'g'ri kiriting.", required_error: "Taklif narxini kiriting." })
       .positive("Taklif narxi musbat son bo'lishi kerak.")
@@ -214,7 +241,10 @@ export const adminUserStatusSchema = z.object({
 export const paginationQuerySchema = z.object({
   search: z.string({ invalid_type_error: "Qidiruv matni noto'g'ri." }).trim().max(200, "Qidiruv matni 200 ta belgidan oshmasligi kerak.").optional(),
   page: z.coerce.number({ invalid_type_error: "Sahifa raqami noto'g'ri." }).int("Sahifa butun son bo'lishi kerak.").min(1, "Sahifa raqami kamida 1 bo'lishi kerak.").default(1),
-  pageSize: z.coerce.number({ invalid_type_error: "Sahifa hajmi noto'g'ri." }).int("Sahifa hajmi butun son bo'lishi kerak.").min(1, "Sahifa hajmi kamida 1 bo'lishi kerak.").max(PAGINATION.MAX_PAGE_SIZE, `Sahifa hajmi ${PAGINATION.MAX_PAGE_SIZE} dan oshmasligi kerak.`).default(20),
+  pageSize: z.coerce.number({ invalid_type_error: "Sahifa hajmi noto'g'ri." }).int("Sahifa hajmi butun son bo'lishi kerak.").min(1, "Sahifa hajmi kamida 1 bo'lishi kerak.").max(PAGINATION.MAX_PAGE_SIZE, `Sahifa hajmi ${PAGINATION.MAX_PAGE_SIZE} dan oshmasligi kerak.`).default(PAGINATION.DEFAULT_PAGE_SIZE),
+  status: z.enum(["OPEN", "MATCHED", "CLOSED", "PENDING", "ACCEPTED", "REJECTED", "WITHDRAWN", "ACTIVE", "BLOCKED", "ALL"]).optional(),
+  role: z.enum(["SUPERADMIN", "ADMIN", "USER", "ALL"]).optional(),
+  category: z.union([categoryEnum, z.literal("ALL")]).optional(),
 });
 
 export const mineSchema = z.object({

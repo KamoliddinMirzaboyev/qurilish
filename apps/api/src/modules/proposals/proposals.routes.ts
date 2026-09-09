@@ -1,17 +1,24 @@
 import { Router } from "express";
-import path from "node:path";
-import fs from "node:fs/promises";
-import type { Prisma } from "@prisma/client";
-import { createProposalSchema, updateProposalSchema, paginationQuerySchema } from "@buildscience/shared";
+import { paginationQuerySchema } from "@buildscience/shared";
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { validateQuery } from "../../middleware/validate.js";
-import { handleProposalUpload, uploadRoot } from "../../middleware/upload.js";
+import { handleProposalUpload } from "../../middleware/upload.js";
+import { uploadLimiter } from "../../middleware/rateLimit.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ok, paginate } from "../../utils/response.js";
-import { AppError } from "../../utils/AppError.js";
-import { prisma } from "../../services/prisma.js";
 import { toProposalListItem } from "./proposals.serializers.js";
-import { pushNotification } from "../../services/notifications.js";
+import {
+  getRecentCompanyProposals,
+  getCompanyProposals,
+  getProblemProposals,
+  getScientistProposals,
+  loadProposalWithAccess,
+  createProposal,
+  updateProposal,
+  withdrawProposal,
+  acceptProposal,
+  getProposalAttachment,
+} from "./proposals.service.js";
 
 export const proposalsRouter = Router();
 
@@ -30,13 +37,8 @@ proposalsRouter.get(
   requireAuth,
   requireRole("ADMIN"),
   asyncHandler(async (req, res) => {
-    const proposals = await prisma.proposal.findMany({
-      where: { deletedAt: null, problem: { companyId: req.user!.id, deletedAt: null } },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      include: { scientist: true, problem: { include: { company: true } } },
-    });
-    ok(res, { items: proposals.map(toProposalListItem) });
+    const items = await getRecentCompanyProposals(req.user!.id);
+    ok(res, { items });
   })
 );
 
@@ -66,139 +68,9 @@ proposalsRouter.get(
   requireRole("ADMIN"),
   validateQuery(paginationQuerySchema),
   asyncHandler(async (req, res) => {
-    const { page, pageSize } = paginationQuerySchema.parse(req.query);
-    const status = typeof req.query.status === "string" ? req.query.status : undefined;
-
-    const where: Prisma.ProposalWhereInput = {
-      deletedAt: null,
-      problem: { companyId: req.user!.id, deletedAt: null },
-      ...(status && status !== "ALL" ? { status: status as Prisma.EnumProposalStatusFilter["equals"] } : {}),
-    };
-
-    const [proposals, total] = await Promise.all([
-      prisma.proposal.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        include: { scientist: true, problem: { include: { company: true } } },
-      }),
-      prisma.proposal.count({ where }),
-    ]);
-
-    ok(res, paginate(proposals.map(toProposalListItem), page, pageSize, total));
-  })
-);
-
-function parseProposalBody(body: Record<string, unknown>) {
-  const result = createProposalSchema.safeParse({
-    solutionText: body.solutionText,
-    estimatedDays: body.estimatedDays,
-    priceNegotiable: body.priceNegotiable === "true" || body.priceNegotiable === true,
-    proposedPrice: body.proposedPrice === "" || body.proposedPrice == null ? null : body.proposedPrice,
-  });
-  return result;
-}
-
-async function removeFileSafely(storedName: string | null) {
-  if (!storedName) return;
-  const filePath = path.join(uploadRoot, storedName);
-  try {
-    await fs.unlink(filePath);
-  } catch {
-    // ponytail: best-effort cleanup, file may already be gone
-  }
-}
-
-/**
- * @openapi
- * /problems/{problemId}/proposals:
- *   post:
- *     tags: [Proposals]
- *     summary: Muammoga taklif yuborish (SCIENTIST, fayl ilova qilish mumkin)
- *     parameters:
- *       - in: path
- *         name: problemId
- *         required: true
- *         schema: { type: string }
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required: [solutionText, estimatedDays, priceNegotiable]
- *             properties:
- *               solutionText: { type: string }
- *               estimatedDays: { type: integer }
- *               priceNegotiable: { type: boolean }
- *               proposedPrice: { type: number, nullable: true }
- *               attachment: { type: string, format: binary }
- *     responses:
- *       201:
- *         description: Yuborildi
- */
-proposalsRouter.post(
-  "/problems/:problemId/proposals",
-  requireAuth,
-  requireRole("USER"),
-  handleProposalUpload,
-  asyncHandler(async (req, res) => {
-    const parsed = parseProposalBody(req.body);
-    if (!parsed.success) {
-      await removeFileSafely(req.file?.filename ?? null);
-      const errors: Record<string, string[]> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path.join(".") || "form";
-        errors[key] = [...(errors[key] ?? []), issue.message];
-      }
-      throw AppError.unprocessable("Kiritilgan ma'lumotlarda xatolik bor.", errors);
-    }
-
-    const problem = await prisma.problem.findFirst({ where: { id: req.params.problemId, deletedAt: null } });
-    if (!problem) {
-      await removeFileSafely(req.file?.filename ?? null);
-      throw AppError.notFound("Muammo topilmadi.");
-    }
-    if (problem.status !== "OPEN") {
-      await removeFileSafely(req.file?.filename ?? null);
-      throw AppError.conflict("Bu muammoga taklif yuborib bo'lmaydi.");
-    }
-
-    const existing = await prisma.proposal.findFirst({
-      where: { problemId: problem.id, scientistId: req.user!.id, deletedAt: null },
-    });
-    if (existing) {
-      await removeFileSafely(req.file?.filename ?? null);
-      throw AppError.conflict("Siz bu muammoga allaqachon taklif yuborgansiz.");
-    }
-
-    const proposal = await prisma.proposal.create({
-      data: {
-        problemId: problem.id,
-        scientistId: req.user!.id,
-        solutionText: parsed.data.solutionText,
-        estimatedDays: parsed.data.estimatedDays,
-        priceNegotiable: parsed.data.priceNegotiable,
-        proposedPrice: parsed.data.proposedPrice ?? null,
-        attachmentOriginalName: req.file?.originalname ?? null,
-        attachmentStoredName: req.file?.filename ?? null,
-        attachmentMime: req.file?.mimetype ?? null,
-        attachmentSize: req.file?.size ?? null,
-        status: "PENDING",
-      },
-      include: { scientist: true },
-    });
-
-    void pushNotification({
-      userId: problem.companyId,
-      type: "PROPOSAL_RECEIVED",
-      title: "Yangi taklif keldi",
-      body: `${req.user!.name} «${problem.title}» muammosiga taklif yubordi.`,
-      link: `/app/admin/problems/${problem.id}/proposals`,
-    });
-
-    ok(res, toProposalListItem(proposal), 201);
+    const { page, pageSize, status } = paginationQuerySchema.parse(req.query);
+    const result = await getCompanyProposals(req.user!.id, page, pageSize, status);
+    ok(res, paginate(result.items, result.page, result.pageSize, result.total));
   })
 );
 
@@ -207,7 +79,7 @@ proposalsRouter.post(
  * /problems/{problemId}/proposals:
  *   get:
  *     tags: [Proposals]
- *     summary: Muammoga kelgan takliflar ro'yxati (COMPANY egasi yoki ADMIN)
+ *     summary: Muammoning barcha takliflari (faqat COMPANY egasi yoki SUPERADMIN)
  *     parameters:
  *       - in: path
  *         name: problemId
@@ -221,19 +93,43 @@ proposalsRouter.get(
   "/problems/:problemId/proposals",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const problem = await prisma.problem.findFirst({ where: { id: req.params.problemId, deletedAt: null } });
-    if (!problem) throw AppError.notFound("Muammo topilmadi.");
-    if (req.user!.role !== "SUPERADMIN" && problem.companyId !== req.user!.id) {
-      throw AppError.forbidden();
-    }
-
-    const proposals = await prisma.proposal.findMany({
-      where: { problemId: problem.id, deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      include: { scientist: true },
+    const items = await getProblemProposals(req.params.problemId!, {
+      id: req.user!.id,
+      role: req.user!.role,
     });
+    ok(res, { items });
+  })
+);
 
-    ok(res, { items: proposals.map(toProposalListItem) });
+/**
+ * @openapi
+ * /problems/{problemId}/proposals:
+ *   post:
+ *     tags: [Proposals]
+ *     summary: Muammoga taklif yuborish (SCIENTIST, fayl ilova qilish mumkin)
+ *     parameters:
+ *       - in: path
+ *         name: problemId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       201:
+ *         description: Yuborildi
+ */
+proposalsRouter.post(
+  "/problems/:problemId/proposals",
+  requireAuth,
+  requireRole("USER"),
+  uploadLimiter,
+  handleProposalUpload,
+  asyncHandler(async (req, res) => {
+    const proposal = await createProposal(
+      req.params.problemId!,
+      { id: req.user!.id, name: req.user!.name },
+      req.body as Record<string, unknown>,
+      req.file
+    );
+    ok(res, proposal, 201);
   })
 );
 
@@ -251,30 +147,13 @@ proposalsRouter.get(
   "/proposals/mine",
   requireAuth,
   requireRole("USER"),
+  validateQuery(paginationQuerySchema),
   asyncHandler(async (req, res) => {
-    const proposals = await prisma.proposal.findMany({
-      where: { scientistId: req.user!.id, deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      include: { scientist: true, problem: { include: { company: true } } },
-    });
-    ok(res, { items: proposals.map(toProposalListItem) });
+    const { page, pageSize, status } = paginationQuerySchema.parse(req.query);
+    const result = await getScientistProposals(req.user!.id, page, pageSize, status);
+    ok(res, paginate(result.items, result.page, result.pageSize, result.total));
   })
 );
-
-async function loadProposalWithAccess(proposalId: string, userId: string, role: string) {
-  const proposal = await prisma.proposal.findFirst({
-    where: { id: proposalId, deletedAt: null },
-    include: { scientist: true, problem: { include: { company: true } } },
-  });
-  if (!proposal) throw AppError.notFound("Taklif topilmadi.");
-
-  const isOwnerScientist = proposal.scientistId === userId;
-  const isOwnerCompany = proposal.problem?.companyId === userId;
-  const isAdmin = role === "SUPERADMIN";
-  if (!isOwnerScientist && !isOwnerCompany && !isAdmin) throw AppError.forbidden();
-
-  return proposal;
-}
 
 /**
  * @openapi
@@ -282,11 +161,6 @@ async function loadProposalWithAccess(proposalId: string, userId: string, role: 
  *   get:
  *     tags: [Proposals]
  *     summary: Taklif tafsiloti (egasi, muammo kompaniyasi yoki ADMIN)
- *     parameters:
- *       - in: path
- *         name: proposalId
- *         required: true
- *         schema: { type: string }
  *     responses:
  *       200:
  *         description: OK
@@ -306,24 +180,6 @@ proposalsRouter.get(
  *   patch:
  *     tags: [Proposals]
  *     summary: Taklifni tahrirlash (faqat PENDING, SCIENTIST egasi)
- *     parameters:
- *       - in: path
- *         name: proposalId
- *         required: true
- *         schema: { type: string }
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required: [solutionText, estimatedDays, priceNegotiable]
- *             properties:
- *               solutionText: { type: string }
- *               estimatedDays: { type: integer }
- *               priceNegotiable: { type: boolean }
- *               proposedPrice: { type: number, nullable: true }
- *               attachment: { type: string, format: binary }
  *     responses:
  *       200:
  *         description: OK
@@ -332,66 +188,16 @@ proposalsRouter.patch(
   "/proposals/:proposalId",
   requireAuth,
   requireRole("USER"),
+  uploadLimiter,
   handleProposalUpload,
   asyncHandler(async (req, res) => {
-    const proposal = await prisma.proposal.findFirst({
-      where: { id: req.params.proposalId, deletedAt: null },
-      include: { problem: true },
-    });
-    if (!proposal) {
-      await removeFileSafely(req.file?.filename ?? null);
-      throw AppError.notFound("Taklif topilmadi.");
-    }
-    if (proposal.scientistId !== req.user!.id) {
-      await removeFileSafely(req.file?.filename ?? null);
-      throw AppError.forbidden();
-    }
-    if (proposal.status !== "PENDING" || proposal.problem?.status !== "OPEN") {
-      await removeFileSafely(req.file?.filename ?? null);
-      throw AppError.conflict("Faqat kutilayotgan va ochiq muammo bo'yicha taklifni tahrirlash mumkin.");
-    }
-
-    const parsed = updateProposalSchema.safeParse({
-      solutionText: req.body.solutionText,
-      estimatedDays: req.body.estimatedDays,
-      priceNegotiable: req.body.priceNegotiable === "true" || req.body.priceNegotiable === true,
-      proposedPrice: req.body.proposedPrice === "" || req.body.proposedPrice == null ? null : req.body.proposedPrice,
-    });
-    if (!parsed.success) {
-      await removeFileSafely(req.file?.filename ?? null);
-      const errors: Record<string, string[]> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path.join(".") || "form";
-        errors[key] = [...(errors[key] ?? []), issue.message];
-      }
-      throw AppError.unprocessable("Kiritilgan ma'lumotlarda xatolik bor.", errors);
-    }
-
-    const oldStoredName = proposal.attachmentStoredName;
-    const updated = await prisma.proposal.update({
-      where: { id: proposal.id },
-      data: {
-        solutionText: parsed.data.solutionText,
-        estimatedDays: parsed.data.estimatedDays,
-        priceNegotiable: parsed.data.priceNegotiable,
-        proposedPrice: parsed.data.proposedPrice ?? null,
-        ...(req.file
-          ? {
-              attachmentOriginalName: req.file.originalname,
-              attachmentStoredName: req.file.filename,
-              attachmentMime: req.file.mimetype,
-              attachmentSize: req.file.size,
-            }
-          : {}),
-      },
-      include: { scientist: true },
-    });
-
-    if (req.file && oldStoredName) {
-      await removeFileSafely(oldStoredName);
-    }
-
-    ok(res, toProposalListItem(updated));
+    const updated = await updateProposal(
+      req.params.proposalId!,
+      req.user!.id,
+      req.body as Record<string, unknown>,
+      req.file
+    );
+    ok(res, updated);
   })
 );
 
@@ -401,11 +207,6 @@ proposalsRouter.patch(
  *   post:
  *     tags: [Proposals]
  *     summary: Taklifni bekor qilish (faqat PENDING, SCIENTIST egasi)
- *     parameters:
- *       - in: path
- *         name: proposalId
- *         required: true
- *         schema: { type: string }
  *     responses:
  *       200:
  *         description: OK
@@ -415,26 +216,11 @@ proposalsRouter.post(
   requireAuth,
   requireRole("USER"),
   asyncHandler(async (req, res) => {
-    const proposal = await prisma.proposal.findFirst({ where: { id: req.params.proposalId, deletedAt: null } });
-    if (!proposal) throw AppError.notFound("Taklif topilmadi.");
-    if (proposal.scientistId !== req.user!.id) throw AppError.forbidden();
-    if (proposal.status !== "PENDING") throw AppError.conflict("Bu bosqichdagi taklifni bekor qilib bo'lmaydi.");
-
-    const updated = await prisma.proposal.update({
-      where: { id: proposal.id },
-      data: { status: "WITHDRAWN", withdrawnAt: new Date() },
-      include: { scientist: true, problem: true },
+    const updated = await withdrawProposal(req.params.proposalId!, {
+      id: req.user!.id,
+      name: req.user!.name,
     });
-    if (updated.problem) {
-      void pushNotification({
-        userId: updated.problem.companyId,
-        type: "PROPOSAL_WITHDRAWN",
-        title: "Taklif bekor qilindi",
-        body: `${req.user!.name} «${updated.problem.title}» bo'yicha taklifini bekor qildi.`,
-        link: `/app/admin/problems/${updated.problemId}/proposals`,
-      });
-    }
-    ok(res, toProposalListItem(updated));
+    ok(res, updated);
   })
 );
 
@@ -444,11 +230,6 @@ proposalsRouter.post(
  *   post:
  *     tags: [Proposals]
  *     summary: Taklifni qabul qilish (COMPANY egasi) — muammo MATCHED bo'ladi, qolgan takliflar rad etiladi
- *     parameters:
- *       - in: path
- *         name: proposalId
- *         required: true
- *         schema: { type: string }
  *     responses:
  *       200:
  *         description: OK
@@ -458,70 +239,8 @@ proposalsRouter.post(
   requireAuth,
   requireRole("ADMIN"),
   asyncHandler(async (req, res) => {
-    const proposalId = req.params.proposalId;
-
-    const result = await prisma.$transaction(async (tx) => {
-      const proposal = await tx.proposal.findFirst({ where: { id: proposalId, deletedAt: null } });
-      if (!proposal) throw AppError.notFound("Taklif topilmadi.");
-
-      const problem = await tx.problem.findFirst({ where: { id: proposal.problemId, deletedAt: null } });
-      if (!problem) throw AppError.notFound("Muammo topilmadi.");
-      if (problem.companyId !== req.user!.id) throw AppError.forbidden();
-      if (proposal.status !== "PENDING") throw AppError.conflict("Faqat kutilayotgan takliflarni qabul qilish mumkin.");
-
-      const scientist = await tx.user.findFirst({
-        where: { id: proposal.scientistId, status: "ACTIVE", deletedAt: null },
-      });
-      if (!scientist) throw AppError.conflict("Olim faol emas.");
-
-      const claim = await tx.problem.updateMany({
-        where: { id: problem.id, status: "OPEN" },
-        data: { status: "MATCHED", matchedAt: new Date() },
-      });
-      if (claim.count === 0) {
-        throw AppError.conflict("Muammo allaqachon boshqa taklif bilan yopilgan.");
-      }
-
-      await tx.proposal.update({
-        where: { id: proposal.id },
-        data: { status: "ACCEPTED", acceptedAt: new Date() },
-      });
-
-      await tx.proposal.updateMany({
-        where: { problemId: problem.id, status: "PENDING", id: { not: proposal.id } },
-        data: { status: "REJECTED" },
-      });
-
-      return {
-        accepted: await tx.proposal.findFirstOrThrow({ where: { id: proposal.id }, include: { scientist: true } }),
-        problemTitle: problem.title,
-        rejectedIds: (
-          await tx.proposal.findMany({
-            where: { problemId: problem.id, status: "REJECTED", id: { not: proposal.id }, deletedAt: null },
-            select: { scientistId: true },
-          })
-        ).map((p) => p.scientistId),
-      };
-    });
-
-    void pushNotification({
-      userId: result.accepted.scientistId,
-      type: "PROPOSAL_ACCEPTED",
-      title: "Taklifingiz qabul qilindi",
-      body: `«${result.problemTitle}» muammosi bo'yicha taklifingiz tanlandi. Kontaktlar ochildi.`,
-      link: "/app/connections",
-    });
-    for (const scientistId of result.rejectedIds) {
-      void pushNotification({
-        userId: scientistId,
-        type: "PROPOSAL_REJECTED",
-        title: "Taklif rad etildi",
-        body: `«${result.problemTitle}» uchun boshqa taklif tanlandi.`,
-        link: "/app/user/proposals",
-      });
-    }
-
-    ok(res, toProposalListItem(result.accepted));
+    const accepted = await acceptProposal(req.params.proposalId!, req.user!.id);
+    ok(res, accepted);
   })
 );
 
@@ -531,38 +250,22 @@ proposalsRouter.post(
  *   get:
  *     tags: [Proposals]
  *     summary: Taklifga ilova qilingan faylni yuklab olish
- *     parameters:
- *       - in: path
- *         name: proposalId
- *         required: true
- *         schema: { type: string }
  *     responses:
  *       200:
  *         description: Fayl
- *         content:
- *           application/octet-stream:
- *             schema: { type: string, format: binary }
- *       404:
- *         description: Fayl mavjud emas
  */
 proposalsRouter.get(
   "/proposals/:proposalId/attachment",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const proposal = await loadProposalWithAccess(req.params.proposalId!, req.user!.id, req.user!.role);
-    if (!proposal.attachmentStoredName || !proposal.attachmentOriginalName) {
-      throw AppError.notFound("Fayl mavjud emas.");
-    }
-
-    const filePath = path.join(uploadRoot, proposal.attachmentStoredName);
-    const resolved = path.resolve(filePath);
-    if (!resolved.startsWith(path.resolve(uploadRoot))) {
-      throw AppError.badRequest("Noto'g'ri fayl so'rovi.");
-    }
-
-    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(proposal.attachmentOriginalName)}"`);
-    if (proposal.attachmentMime) res.setHeader("Content-Type", proposal.attachmentMime);
-    res.sendFile(resolved, (err) => {
+    const attachment = await getProposalAttachment(req.params.proposalId!, {
+      id: req.user!.id,
+      role: req.user!.role,
+    });
+    const encoded = encodeURIComponent(attachment.originalName);
+    res.setHeader("Content-Disposition", `attachment; filename="${encoded}"; filename*=UTF-8''${encoded}`);
+    if (attachment.mimeType) res.setHeader("Content-Type", attachment.mimeType);
+    res.sendFile(attachment.resolvedPath, (err) => {
       if (err && !res.headersSent) {
         res.status(404).json({ success: false, message: "Fayl topilmadi." });
       }

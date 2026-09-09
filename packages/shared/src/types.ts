@@ -56,6 +56,8 @@ export interface ProblemDetail extends Omit<ProblemListItem, "descriptionExcerpt
   matchedAt: string | null;
   closedAt: string | null;
   images: GalleryImage[];
+  hasMyProposal?: boolean;
+  myProposalId?: string | null;
 }
 
 export interface ProposalListItem {

@@ -95,76 +95,135 @@ export default function SuperAdminUsersPage() {
       {isLoading ? (
         <ListSkeleton count={6} />
       ) : data && data.items.length > 0 ? (
-        <div className="overflow-hidden rounded-card border border-surface-border bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-              <thead>
-                <tr className="border-b border-surface-border bg-surface-page text-xs font-medium uppercase tracking-wide text-ink-muted">
-                  <th className="px-4 py-3 font-medium">Foydalanuvchi</th>
-                  <th className="px-4 py-3 font-medium">Rol</th>
-                  <th className="px-4 py-3 font-medium">Aloqa</th>
-                  <th className="px-4 py-3 font-medium">Holat</th>
-                  <th className="px-4 py-3 font-medium">Ro'yxatdan o'tgan</th>
-                  <th className="px-4 py-3 text-right font-medium">Amallar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((u) => {
-                  const isSelf = u.id === me?.id;
-                  const canManage = !isSelf && u.role !== "SUPERADMIN";
-                  return (
-                    <tr key={u.id} className="border-b border-surface-border last:border-0 hover:bg-surface-page">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <UserAvatar name={u.name} size={34} />
-                          <div>
-                            <p className="font-medium text-brand-dark">
-                              {u.name} {isSelf && <span className="text-xs font-normal text-ink-muted">(siz)</span>}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge className={roleBadgeStyles[u.role as Role]}>{ROLE_LABELS_UZ[u.role as Role]}</Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-ink">{u.email}</p>
-                        <p className="text-xs text-ink-muted">{u.phone}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge className={u.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}>
-                          {USER_STATUS_LABELS_UZ[u.status]}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-ink-muted">{formatDate(u.createdAt)}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <IconButton label="Ko'rish" onClick={() => setViewTarget(u)}>
-                            <Eye size={16} />
+        <>
+          {/* Mobile view: responsive cards */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {data.items.map((u) => {
+              const isSelf = u.id === me?.id;
+              const canManage = !isSelf && u.role !== "SUPERADMIN";
+              return (
+                <div key={u.id} className="flex flex-col gap-3 rounded-card border border-surface-border bg-white p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <UserAvatar name={u.name} size={36} />
+                      <div>
+                        <p className="font-semibold text-brand-dark">
+                          {u.name} {isSelf && <span className="text-xs font-normal text-ink-muted">(siz)</span>}
+                        </p>
+                        <p className="text-xs text-ink-muted">{formatDate(u.createdAt)}</p>
+                      </div>
+                    </div>
+                    <Badge className={roleBadgeStyles[u.role as Role]}>{ROLE_LABELS_UZ[u.role as Role]}</Badge>
+                  </div>
+                  <div className="flex flex-col gap-1 text-xs text-ink-muted">
+                    <p>
+                      <span className="font-medium text-ink">Email:</span> {u.email}
+                    </p>
+                    <p>
+                      <span className="font-medium text-ink">Tel:</span> {u.phone}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-surface-border pt-2">
+                    <Badge className={u.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}>
+                      {USER_STATUS_LABELS_UZ[u.status]}
+                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <IconButton label="Ko'rish" onClick={() => setViewTarget(u)}>
+                        <Eye size={16} />
+                      </IconButton>
+                      {canManage && (
+                        <>
+                          <IconButton
+                            label={u.status === "ACTIVE" ? "Bloklash" : "Faollashtirish"}
+                            onClick={() => setBlockTarget(u)}
+                            className={clsx(u.status === "ACTIVE" && "text-amber-600 hover:bg-amber-50")}
+                          >
+                            {u.status === "ACTIVE" ? <Ban size={16} /> : <CheckCircle2 size={16} />}
                           </IconButton>
-                          {canManage && (
-                            <>
-                              <IconButton
-                                label={u.status === "ACTIVE" ? "Bloklash" : "Faollashtirish"}
-                                onClick={() => setBlockTarget(u)}
-                                className={clsx(u.status === "ACTIVE" && "text-amber-600 hover:bg-amber-50")}
-                              >
-                                {u.status === "ACTIVE" ? <Ban size={16} /> : <CheckCircle2 size={16} />}
-                              </IconButton>
-                              <IconButton label="O'chirish" onClick={() => setDeleteTarget(u)} className="text-danger hover:bg-red-50">
-                                <Trash2 size={16} />
-                              </IconButton>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                          <IconButton label="O'chirish" onClick={() => setDeleteTarget(u)} className="text-danger hover:bg-red-50">
+                            <Trash2 size={16} />
+                          </IconButton>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+
+          {/* Desktop view: full table */}
+          <div className="hidden md:block overflow-hidden rounded-card border border-surface-border bg-white">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-surface-border bg-surface-page text-xs font-medium uppercase tracking-wide text-ink-muted">
+                    <th className="px-4 py-3 font-medium">Foydalanuvchi</th>
+                    <th className="px-4 py-3 font-medium">Rol</th>
+                    <th className="px-4 py-3 font-medium">Aloqa</th>
+                    <th className="px-4 py-3 font-medium">Holat</th>
+                    <th className="px-4 py-3 font-medium">Ro'yxatdan o'tgan</th>
+                    <th className="px-4 py-3 text-right font-medium">Amallar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.items.map((u) => {
+                    const isSelf = u.id === me?.id;
+                    const canManage = !isSelf && u.role !== "SUPERADMIN";
+                    return (
+                      <tr key={u.id} className="border-b border-surface-border last:border-0 hover:bg-surface-page">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <UserAvatar name={u.name} size={34} />
+                            <div>
+                              <p className="font-medium text-brand-dark">
+                                {u.name} {isSelf && <span className="text-xs font-normal text-ink-muted">(siz)</span>}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={roleBadgeStyles[u.role as Role]}>{ROLE_LABELS_UZ[u.role as Role]}</Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-ink">{u.email}</p>
+                          <p className="text-xs text-ink-muted">{u.phone}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={u.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}>
+                            {USER_STATUS_LABELS_UZ[u.status]}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-ink-muted">{formatDate(u.createdAt)}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-1">
+                            <IconButton label="Ko'rish" onClick={() => setViewTarget(u)}>
+                              <Eye size={16} />
+                            </IconButton>
+                            {canManage && (
+                              <>
+                                <IconButton
+                                  label={u.status === "ACTIVE" ? "Bloklash" : "Faollashtirish"}
+                                  onClick={() => setBlockTarget(u)}
+                                  className={clsx(u.status === "ACTIVE" && "text-amber-600 hover:bg-amber-50")}
+                                >
+                                  {u.status === "ACTIVE" ? <Ban size={16} /> : <CheckCircle2 size={16} />}
+                                </IconButton>
+                                <IconButton label="O'chirish" onClick={() => setDeleteTarget(u)} className="text-danger hover:bg-red-50">
+                                  <Trash2 size={16} />
+                                </IconButton>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       ) : (
         <EmptyState title="Berilgan mezonlarga mos ma'lumot topilmadi." />
       )}

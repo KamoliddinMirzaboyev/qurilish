@@ -10,6 +10,11 @@ export function agent() {
 }
 
 /** ADMIN (firma) akkauntlari endi faqat SUPERADMIN tomonidan yaratiladi — testda to'g'ridan-to'g'ri DB orqali yaratib, login qilamiz. */
+function phoneFromEmail(email: string, fallback: string) {
+  const n = [...email].reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return `+9989${String(n).padStart(8, "0").slice(-8)}`.slice(0, 13) || fallback;
+}
+
 export async function registerCompany(email = "company@test.local") {
   const passwordHash = await bcrypt.hash("Password123", 4);
   await prisma.user.create({
@@ -17,7 +22,7 @@ export async function registerCompany(email = "company@test.local") {
       role: "ADMIN",
       name: "Test Qurilish MChJ",
       email,
-      phone: "+998901234567",
+      phone: phoneFromEmail(email, "+998901234567"),
       passwordHash,
       status: "ACTIVE",
     },
@@ -32,7 +37,7 @@ export async function registerScientist(email = "scientist@test.local") {
   const res = await a.post("/api/auth/register").send({
     name: "Test Olim",
     email,
-    phone: "+998907654321",
+    phone: phoneFromEmail(email, "+998907654321"),
     password: "Password123",
     passwordConfirm: "Password123",
     specialization: "Beton",
@@ -48,7 +53,7 @@ export async function registerSuperadmin(email = "superadmin@test.local") {
       role: "SUPERADMIN",
       name: "Test Hokimiyat",
       email,
-      phone: "+998900000001",
+      phone: phoneFromEmail(email, "+998900000001"),
       passwordHash,
       status: "ACTIVE",
     },

@@ -1,19 +1,34 @@
 import { Router } from "express";
-import { registerSchema, loginSchema, updateProfileSchema, changePasswordSchema, updateLoginSchema } from "@buildscience/shared";
+import {
+  registerSchema,
+  loginSchema,
+  updateProfileSchema,
+  changePasswordSchema,
+  updateLoginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "@buildscience/shared";
 import { validateBody } from "../../middleware/validate.js";
 import { requireAuth } from "../../middleware/auth.js";
-import { authLimiter } from "../../middleware/rateLimit.js";
+import { authLimiter, sensitiveLimiter } from "../../middleware/rateLimit.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ok } from "../../utils/response.js";
 import { toAuthUser } from "../../utils/serializers.js";
-import { registerUser, authenticateUser } from "./auth.service.js";
+import { registerUser, authenticateUser, requestPasswordReset, resetPassword } from "./auth.service.js";
 import { prisma } from "../../services/prisma.js";
 import { verifyPassword, hashPassword } from "../../utils/password.js";
 import { normalizePhone } from "../../utils/phone.js";
 import { AppError } from "../../utils/AppError.js";
-import { env } from "../../config/env.js";
+import { clearSessionCookie, destroyUserSessions, establishSession } from "../../utils/sessionAuth.js";
+import { ensureCsrfCookie } from "../../middleware/csrf.js";
+import { assertPhoneAvailable } from "../../utils/unique.js";
 
 export const authRouter = Router();
+
+authRouter.get("/csrf", (req, res) => {
+  const csrfToken = ensureCsrfCookie(req, res);
+  ok(res, { csrfToken });
+});
 
 /**
  * @openapi
@@ -47,7 +62,7 @@ authRouter.post(
   validateBody(registerSchema),
   asyncHandler(async (req, res) => {
     const user = await registerUser(req.body);
-    req.session.userId = user.id;
+    await establishSession(req, user.id);
     ok(res, toAuthUser(user), 201);
   })
 );
@@ -79,7 +94,7 @@ authRouter.post(
   validateBody(loginSchema),
   asyncHandler(async (req, res) => {
     const user = await authenticateUser(req.body.email, req.body.password);
-    req.session.userId = user.id;
+    await establishSession(req, user.id);
     ok(res, toAuthUser(user));
   })
 );
@@ -96,7 +111,7 @@ authRouter.post(
  */
 authRouter.post("/logout", (req, res) => {
   req.session.destroy(() => {
-    res.clearCookie(env.sessionCookieName);
+    clearSessionCookie(res);
     ok(res, { loggedOut: true });
   });
 });
@@ -147,11 +162,13 @@ authRouter.patch(
   requireAuth,
   validateBody(updateProfileSchema),
   asyncHandler(async (req, res) => {
+    const phone = normalizePhone(req.body.phone);
+    await assertPhoneAvailable(phone, req.user!.id);
     const updated = await prisma.user.update({
       where: { id: req.user!.id },
       data: {
         name: req.body.name,
-        phone: normalizePhone(req.body.phone),
+        phone,
         organization: req.body.organization || null,
         specialization: req.body.specialization || null,
         bio: req.body.bio || null,
@@ -185,6 +202,7 @@ authRouter.patch(
 authRouter.patch(
   "/password",
   requireAuth,
+  sensitiveLimiter,
   validateBody(changePasswordSchema),
   asyncHandler(async (req, res) => {
     const valid = await verifyPassword(req.body.currentPassword, req.user!.passwordHash);
@@ -194,6 +212,8 @@ authRouter.patch(
       where: { id: req.user!.id },
       data: { passwordHash: await hashPassword(req.body.newPassword) },
     });
+    await destroyUserSessions(req.user!.id);
+    await establishSession(req, req.user!.id);
     ok(res, { updated: true });
   })
 );
@@ -221,6 +241,7 @@ authRouter.patch(
 authRouter.patch(
   "/email",
   requireAuth,
+  sensitiveLimiter,
   validateBody(updateLoginSchema),
   asyncHandler(async (req, res) => {
     const valid = await verifyPassword(req.body.currentPassword, req.user!.passwordHash);
@@ -234,5 +255,67 @@ authRouter.patch(
 
     const updated = await prisma.user.update({ where: { id: req.user!.id }, data: { email: newLogin } });
     ok(res, toAuthUser(updated));
+  })
+);
+
+/**
+ * @openapi
+ * /auth/forgot-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Parolni tiklash uchun so'rov yuborish
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string }
+ *     responses:
+ *       200:
+ *         description: So'rov qabul qilindi
+ */
+authRouter.post(
+  "/forgot-password",
+  authLimiter,
+  validateBody(forgotPasswordSchema),
+  asyncHandler(async (req, res) => {
+    const result = await requestPasswordReset(req.body.email);
+    ok(res, result);
+  })
+);
+
+/**
+ * @openapi
+ * /auth/reset-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Parolni yangilash (token orqali)
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, newPassword, confirmPassword]
+ *             properties:
+ *               token: { type: string }
+ *               newPassword: { type: string }
+ *               confirmPassword: { type: string }
+ *     responses:
+ *       200:
+ *         description: Parol muvaffaqiyatli yangilandi
+ */
+authRouter.post(
+  "/reset-password",
+  authLimiter,
+  validateBody(resetPasswordSchema),
+  asyncHandler(async (req, res) => {
+    const result = await resetPassword(req.body.token, req.body.newPassword);
+    ok(res, result);
   })
 );

@@ -140,7 +140,7 @@ tasodifan tozalashning oldini oladi.
 | USER | `nodira.yusupova@buildscience.local` | `Scientist12345!` |
 | USER | `bekzod.rahimov@buildscience.local` | `Scientist12345!` |
 
-Production muhitida ushbu parollarni albatta almashtiring.
+Production seed faqat SUPERADMIN yaratadi (ADMIN_EMAIL + ADMIN_PASSWORD majburiy). Demo akkauntlar prodga tushmaydi.
 
 ## Rol ruxsatlari (qisqacha)
 
@@ -156,6 +156,7 @@ Production muhitida ushbu parollarni albatta almashtiring.
 Barcha endpointlar `/api` prefiksi bilan boshlanadi.
 
 - `GET /health` — API va DB holati
+- `GET /auth/csrf` — CSRF token cookie
 - `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `PATCH /auth/profile`,
   `PATCH /auth/password`
 - `GET /public/stats`

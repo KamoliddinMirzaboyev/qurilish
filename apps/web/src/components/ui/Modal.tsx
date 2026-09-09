@@ -49,10 +49,14 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
       }
       if (ref.current) trapTabKey(ref.current, e);
     }
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKeyDown);
-    ref.current?.focus();
+    const first = ref.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    (first ?? ref.current)?.focus();
 
     return () => {
+      document.body.style.overflow = prevOverflow;
       document.removeEventListener("keydown", onKeyDown);
       if (triggerRef.current instanceof HTMLElement) triggerRef.current.focus();
     };
@@ -127,7 +131,7 @@ export function ConfirmationDialog({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={isLoading ? () => undefined : onClose}
       title={title}
       footer={
         <>

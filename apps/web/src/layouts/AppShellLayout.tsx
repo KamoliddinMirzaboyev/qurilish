@@ -19,7 +19,7 @@ import {
 import { LogoWithText } from "@/components/shared/Logo";
 import { UserAvatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/features/auth/AuthContext";
-import { api } from "@/lib/api";
+import { logoutClient } from "@/lib/session";
 import { PageLoader } from "@/routes/guards";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { useNotificationStream } from "@/features/notifications/hooks";
@@ -37,6 +37,7 @@ const navByRole: Record<string, NavItem[]> = {
     { label: "Boshqaruv paneli", to: "/app/admin", icon: LayoutDashboard, end: true },
     { label: "Muammolarim", to: "/app/admin/problems", icon: ClipboardList },
     { label: "Takliflar", to: "/app/admin/proposals", icon: FileText },
+    { label: "Konlarim", to: "/app/admin/mines", icon: Mountain },
     { label: "Chiqindilarim", to: "/app/admin/waste", icon: Recycle },
     { label: "Bog'lanishlar", to: "/app/connections", icon: Handshake },
     { label: "Profil", to: "/app/profile", icon: User },
@@ -107,7 +108,7 @@ export function AppShellLayout() {
 
   async function handleLogout() {
     setUserMenuOpen(false);
-    await api.post("/auth/logout");
+    await logoutClient();
     setUser(null);
     navigate("/");
   }

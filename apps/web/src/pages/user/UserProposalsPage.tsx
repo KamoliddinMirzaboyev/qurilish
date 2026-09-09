@@ -24,26 +24,56 @@ const tabs = [
 ] as const;
 
 function AcceptedPanel({ proposal }: { proposal: ProposalListItem }) {
-  const { data: connection } = useConnection(proposal.id);
+  const [showContact, setShowContact] = useState(false);
+  const { data: connection, isLoading } = useConnection(showContact ? proposal.id : undefined);
   const view = connection as ConnectionScientistView | undefined;
-  if (!view) return <ListSkeleton count={1} />;
 
   return (
-    <div className="rounded-card border border-emerald-200 bg-emerald-50 p-5">
-      <p className="mb-3 font-medium text-emerald-700">Taklifingiz qabul qilindi</p>
-      <ConnectionCard
-        problemId={proposal.problemId}
-        problemTitle={view.problemTitle}
-        contactName={view.companyName}
-        email={view.companyEmail}
-        phone={view.companyPhone}
-        acceptedAt={view.acceptedAt}
-      />
-      <p className="mt-3 text-xs text-emerald-700">
-        BuildScience tomonlarni bog'lash uchun xizmat qiladi. Shartnoma, to'lov va loyiha ijrosi platformadan tashqarida amalga
-        oshiriladi.
-      </p>
-    </div>
+    <Card className="flex flex-col gap-3 border-emerald-200 bg-emerald-50/40">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-brand-primary">{proposal.problemTitle}</p>
+          {proposal.category && <CategoryBadge category={proposal.category} />}
+        </div>
+        <ProposalStatusBadge status={proposal.status} />
+      </div>
+      <p className="line-clamp-3 text-sm text-ink">{proposal.solutionText}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-emerald-200/60 pt-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-emerald-800">Taklifingiz qabul qilindi!</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowContact((v) => !v)}
+          >
+            {showContact ? "Kontaktni yashirish" : "Kontaktni ko'rish"}
+          </Button>
+          <Button size="sm" asLink to="/app/connections">
+            Bog'lanishlar
+          </Button>
+        </div>
+      </div>
+      {showContact && (
+        <div className="mt-2 rounded-lg border border-emerald-200 bg-white p-4">
+          {isLoading ? (
+            <ListSkeleton count={1} />
+          ) : view ? (
+            <ConnectionCard
+              problemId={proposal.problemId}
+              problemTitle={view.problemTitle}
+              contactName={view.companyName}
+              email={view.companyEmail}
+              phone={view.companyPhone}
+              acceptedAt={view.acceptedAt}
+            />
+          ) : (
+            <p className="text-sm text-ink-muted">Kontakt ma'lumotlari hozircha mavjud emas.</p>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -76,7 +106,7 @@ export default function UserProposalsPage() {
       {isLoading ? (
         <ListSkeleton count={4} />
       ) : items.length === 0 ? (
-        <EmptyState title="Siz hali taklif yubormagansiz." />
+        <EmptyState title={tab === "ALL" ? "Siz hali taklif yubormagansiz." : "Bu bo'limda taklif yo'q."} />
       ) : (
         <div className="flex flex-col gap-4">
           {items.map((proposal) =>

@@ -5,6 +5,7 @@ import { wasteSchema, paginationQuerySchema, GALLERY_UPLOAD } from "@buildscienc
 import { requireAuth, requireRole } from "../../middleware/auth.js";
 import { validateQuery } from "../../middleware/validate.js";
 import { handleGalleryUpload, uploadPublicRoot } from "../../middleware/upload.js";
+import { uploadLimiter } from "../../middleware/rateLimit.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ok, paginate } from "../../utils/response.js";
 import { AppError } from "../../utils/AppError.js";
@@ -121,6 +122,7 @@ wasteRouter.post(
   "/company/waste",
   requireAuth,
   requireRole("ADMIN"),
+  uploadLimiter,
   handleGalleryUpload,
   asyncHandler(async (req, res) => {
     const parsed = wasteSchema.safeParse(req.body);
@@ -187,6 +189,7 @@ wasteRouter.patch(
   "/company/waste/:wasteId",
   requireAuth,
   requireRole("ADMIN"),
+  uploadLimiter,
   handleGalleryUpload,
   asyncHandler(async (req, res) => {
     const existing = await prisma.waste.findFirst({ where: { id: req.params.wasteId, deletedAt: null }, include: { images: true } });

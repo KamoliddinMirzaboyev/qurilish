@@ -4,17 +4,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createAdminSchema, type CreateAdminInput } from "@buildscience/shared";
 import { useAdminUsers, useCreateAdmin } from "@/features/admin/hooks";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, EmptyState } from "@/components/ui/Card";
+import { Card, EmptyState, ErrorState } from "@/components/ui/Card";
 import { ListSkeleton } from "@/components/ui/Skeleton";
 import { FormField, Input, PasswordInput, PhoneInput } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { notify } from "@/components/ui/toast";
 import { ApiRequestError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { Pagination } from "@/components/ui/Pagination";
 
 export default function SuperAdminAdminsPage() {
-  const [page] = useState(1);
-  const { data, isLoading } = useAdminUsers({ role: "ADMIN", page });
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isError, refetch } = useAdminUsers({ role: "ADMIN", page });
   const createMutation = useCreateAdmin();
 
   const {
@@ -62,7 +63,7 @@ export default function SuperAdminAdminsPage() {
           <FormField label="Tashkilot (ixtiyoriy)" error={errors.organization?.message} htmlFor="organization">
             <Input id="organization" {...register("organization")} />
           </FormField>
-          <FormField label="Parol" required helperText="Kamida 8 ta belgi" error={errors.password?.message} htmlFor="password">
+          <FormField label="Parol" required helperText="Kamida 8 belgi, harf va raqam" error={errors.password?.message} htmlFor="password">
             <PasswordInput id="password" {...register("password")} />
           </FormField>
           <Button type="submit" isLoading={isSubmitting} className="self-start">
@@ -73,7 +74,9 @@ export default function SuperAdminAdminsPage() {
 
       <div>
         <h2 className="mb-3 font-semibold text-brand-dark">Mavjud firmalar</h2>
-        {isLoading ? (
+        {isError ? (
+          <ErrorState onRetry={() => void refetch()} />
+        ) : isLoading ? (
           <ListSkeleton count={4} />
         ) : data && data.items.length > 0 ? (
           <div className="flex flex-col gap-3">
@@ -92,6 +95,7 @@ export default function SuperAdminAdminsPage() {
         ) : (
           <EmptyState title="Hozircha firma akkauntlari yo'q." />
         )}
+        {data && <Pagination page={data.page} totalPages={data.totalPages} onPageChange={setPage} />}
       </div>
       </div>
     </div>

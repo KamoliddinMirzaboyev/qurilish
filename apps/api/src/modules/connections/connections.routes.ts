@@ -25,7 +25,7 @@ connectionsRouter.get(
     const user = req.user!;
     if (user.role === "ADMIN") {
       const proposals = await prisma.proposal.findMany({
-        where: { status: "ACCEPTED", deletedAt: null, problem: { companyId: user.id } },
+        where: { status: "ACCEPTED", deletedAt: null, scientist: { deletedAt: null }, problem: { companyId: user.id } },
         include: { scientist: true, problem: true },
         orderBy: { acceptedAt: "desc" },
       });
@@ -45,7 +45,7 @@ connectionsRouter.get(
 
     if (user.role === "USER") {
       const proposals = await prisma.proposal.findMany({
-        where: { status: "ACCEPTED", deletedAt: null, scientistId: user.id },
+        where: { status: "ACCEPTED", deletedAt: null, scientistId: user.id, problem: { company: { deletedAt: null } } },
         include: { problem: { include: { company: true } } },
         orderBy: { acceptedAt: "desc" },
       });

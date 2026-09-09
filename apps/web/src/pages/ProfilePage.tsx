@@ -122,6 +122,12 @@ export default function ProfilePage() {
             <PhoneInput id="phone" {...profileForm.register("phone")} />
           </FormField>
 
+          {isAdmin && (
+            <FormField label="Tashkilot" error={profileForm.formState.errors.organization?.message} htmlFor="organization">
+              <Input id="organization" {...profileForm.register("organization")} />
+            </FormField>
+          )}
+
           {isUser && (
             <>
               <FormField label="Mutaxassislik" error={profileForm.formState.errors.specialization?.message} htmlFor="specialization">

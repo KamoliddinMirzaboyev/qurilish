@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Pencil, ListChecks, XCircle } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
 import { useProblem, useCloseProblem } from "@/features/problems/hooks";
-import { useMyProposals } from "@/features/proposals/hooks";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { CategoryBadge, ProblemStatusBadge } from "@/components/ui/Badge";
 import { Card, ErrorState } from "@/components/ui/Card";
@@ -22,7 +21,6 @@ export default function ProblemDetailPage() {
   const { pathname } = useLocation();
   const problemsBase = pathname.startsWith("/app") ? "/app/problems" : "/problems";
   const { data: problem, isLoading, isError, refetch } = useProblem(problemId);
-  const { data: myProposals } = useMyProposals(user?.role === "USER");
   const closeMutation = useCloseProblem();
   const [proposalModalOpen, setProposalModalOpen] = useState(false);
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
@@ -40,7 +38,7 @@ export default function ProblemDetailPage() {
   }
 
   const isOwnerAdmin = user?.role === "ADMIN" && user.id === problem.companyId;
-  const myExistingProposal = myProposals?.items.find((p) => p.problemId === problem.id);
+  const hasSubmittedProposal = problem.hasMyProposal;
   const problemImages = problem.images ?? [];
 
   async function handleClose() {
@@ -96,16 +94,16 @@ export default function ProblemDetailPage() {
           </div>
 
           {!user && (
-            <Button asLink to="/login">
+            <Button asLink to="/login" state={{ from: `/problems/${problem.id}` }}>
               Taklif yuborish
             </Button>
           )}
 
-          {user?.role === "USER" && problem.status === "OPEN" && !myExistingProposal && (
+          {user?.role === "USER" && problem.status === "OPEN" && !hasSubmittedProposal && (
             <Button onClick={() => setProposalModalOpen(true)}>Taklif yuborish</Button>
           )}
 
-          {user?.role === "USER" && myExistingProposal && (
+          {user?.role === "USER" && hasSubmittedProposal && (
             <div className="rounded-lg bg-brand-primary/10 p-4 text-sm text-brand-primary">
               Siz bu muammoga taklif yuborgansiz.
               <Link to="/app/user/proposals" className="mt-1 block font-medium underline">

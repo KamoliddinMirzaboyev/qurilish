@@ -17,7 +17,7 @@ export default function UserDashboardPage() {
   const { data: myProposals, isLoading: proposalsLoading } = useMyProposals();
 
   const proposals = myProposals?.items ?? [];
-  const submitted = proposals.length;
+  const submitted = myProposals?.total ?? proposals.length;
   const accepted = proposals.filter((p) => p.status === "ACCEPTED").length;
   const pending = proposals.filter((p) => p.status === "PENDING").length;
 

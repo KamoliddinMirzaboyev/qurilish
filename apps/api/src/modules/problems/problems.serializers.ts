@@ -29,7 +29,11 @@ export function toProblemListItem(problem: ProblemWithCompany, proposalCount: nu
   };
 }
 
-export function toProblemDetail(problem: ProblemWithCompany, proposalCount: number): ProblemDetail {
+export function toProblemDetail(
+  problem: ProblemWithCompany,
+  proposalCount: number,
+  myProposal?: { id: string } | null
+): ProblemDetail {
   return {
     id: problem.id,
     companyId: problem.companyId,
@@ -47,5 +51,7 @@ export function toProblemDetail(problem: ProblemWithCompany, proposalCount: numb
     createdAt: problem.createdAt.toISOString(),
     matchedAt: problem.matchedAt ? problem.matchedAt.toISOString() : null,
     closedAt: problem.closedAt ? problem.closedAt.toISOString() : null,
+    hasMyProposal: !!myProposal,
+    myProposalId: myProposal?.id ?? null,
   };
 }

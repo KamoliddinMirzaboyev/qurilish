@@ -69,10 +69,23 @@ export function MineMap({ markers = [], onPick, className }: MineMapProps) {
       points.push([marker.lat, marker.lng]);
       const pin = L.marker([marker.lat, marker.lng], { icon: pinIcon });
       if (marker.label) {
-        const body = marker.href
-          ? `<a href="${marker.href}">${escapeHtml(marker.label)}</a>`
+        const safeHref = marker.href && isSafeInternalPath(marker.href) ? marker.href : undefined;
+        const body = safeHref
+          ? `<a href="${escapeHtml(safeHref)}" data-mine-nav="${escapeHtml(safeHref)}">${escapeHtml(marker.label)}</a>`
           : escapeHtml(marker.label);
         pin.bindPopup(body);
+        if (safeHref) {
+          pin.on("popupopen", (e) => {
+            const link = e.popup.getElement()?.querySelector<HTMLAnchorElement>("a[data-mine-nav]");
+            link?.addEventListener("click", (ev) => {
+              ev.preventDefault();
+              const href = link.getAttribute("data-mine-nav");
+              if (!href || !isSafeInternalPath(href)) return;
+              window.history.pushState({}, "", href);
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            });
+          });
+        }
       }
       pin.addTo(layer);
     }
@@ -85,6 +98,10 @@ export function MineMap({ markers = [], onPick, className }: MineMapProps) {
   }, [markers, onPick]);
 
   return <div ref={containerRef} className={className ?? "h-72 w-full rounded-lg"} />;
+}
+
+function isSafeInternalPath(href: string) {
+  return href.startsWith("/") && !href.startsWith("//") && !href.includes(":");
 }
 
 function escapeHtml(value: string) {

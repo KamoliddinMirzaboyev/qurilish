@@ -51,9 +51,15 @@ export default function LoginPage() {
           <PasswordInput id="password" autoComplete="current-password" {...register("password")} />
         </FormField>
 
+        <div className="-mt-2 flex justify-end">
+          <Link to="/forgot-password" className="text-xs font-medium text-brand-primary hover:underline">
+            Parolni unutdingizmi?
+          </Link>
+        </div>
+
         {errors.root && <p className="text-sm text-danger">{errors.root.message}</p>}
 
-        <Button type="submit" isLoading={isSubmitting} className="mt-2">
+        <Button type="submit" isLoading={isSubmitting} className="mt-1">
           Kirish
         </Button>
       </form>

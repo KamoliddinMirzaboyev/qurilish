@@ -11,6 +11,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { ProblemCard } from "@/components/problems/ProblemCard";
 import { CardGridSkeleton, EmptyState, ErrorState } from "@/components/ui/Card";
 import { formatNumber } from "@/lib/format";
+import { pageFromSearch } from "@/lib/session";
 
 const sortOptions = [
   { value: "newest", label: "Eng yangi" },
@@ -25,7 +26,7 @@ export default function ProblemsListPage() {
   const category = (params.get("category") ?? "") as Category | "";
   const budgetType = (params.get("budgetType") ?? "") as BudgetType | "";
   const sort = params.get("sort") ?? "newest";
-  const page = Number(params.get("page") ?? 1);
+  const page = pageFromSearch(params.get("page"));
 
   const debouncedSearch = useDebounce(search);
 
