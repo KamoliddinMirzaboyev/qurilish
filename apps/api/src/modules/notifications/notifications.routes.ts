@@ -20,10 +20,6 @@ notificationsRouter.get(
 notificationsRouter.get(
   "/",
   asyncHandler(async (req, res) => {
-    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-    await prisma.notification.deleteMany({
-      where: { userId: req.user!.id, createdAt: { lt: cutoff } },
-    });
     const items = await prisma.notification.findMany({
       where: { userId: req.user!.id },
       orderBy: { createdAt: "desc" },

@@ -13,6 +13,14 @@ export type NotificationDto = {
 };
 
 const clients = new Map<string, Set<Response>>();
+const MAX_CONNECTIONS_PER_USER = 3;
+const MAX_TOTAL_CONNECTIONS = 1_000;
+
+function totalConnections() {
+  let total = 0;
+  for (const set of clients.values()) total += set.size;
+  return total;
+}
 
 function toDto(n: { id: string; type: NotificationType; title: string; body: string; link: string | null; readAt: Date | null; createdAt: Date }): NotificationDto {
   return {
@@ -27,6 +35,11 @@ function toDto(n: { id: string; type: NotificationType; title: string; body: str
 }
 
 export function subscribeNotifications(userId: string, res: Response) {
+  const existing = clients.get(userId);
+  if ((existing?.size ?? 0) >= MAX_CONNECTIONS_PER_USER || totalConnections() >= MAX_TOTAL_CONNECTIONS) {
+    res.status(429).json({ success: false, message: "Juda ko'p real-time ulanish ochilgan." });
+    return;
+  }
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache, no-transform");
   res.setHeader("Connection", "keep-alive");
@@ -34,7 +47,7 @@ export function subscribeNotifications(userId: string, res: Response) {
   res.flushHeaders?.();
   res.write(": ok\n\n");
 
-  let set = clients.get(userId);
+  let set = existing;
   if (!set) {
     set = new Set();
     clients.set(userId, set);
@@ -45,7 +58,10 @@ export function subscribeNotifications(userId: string, res: Response) {
     res.write(": ping\n\n");
   }, 25000);
 
+  let cleanedUp = false;
   reqOnClose(res, () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
     clearInterval(keepAlive);
     set?.delete(res);
     if (set && set.size === 0) clients.delete(userId);
@@ -53,8 +69,8 @@ export function subscribeNotifications(userId: string, res: Response) {
 }
 
 function reqOnClose(res: Response, fn: () => void) {
-  res.on("close", fn);
-  res.req.on("close", fn);
+  res.once("close", fn);
+  res.req.once("close", fn);
 }
 
 function emit(userId: string, payload: NotificationDto) {
@@ -62,7 +78,7 @@ function emit(userId: string, payload: NotificationDto) {
   if (!set) return;
   const data = `event: notification\ndata: ${JSON.stringify(payload)}\n\n`;
   for (const res of set) {
-    res.write(data);
+    if (!res.writableEnded && !res.destroyed) res.write(data);
   }
 }
 
@@ -84,8 +100,8 @@ export async function pushNotification(input: {
       },
     });
     emit(input.userId, toDto(created));
-  } catch {
-    // notification must not break the main action
+  } catch (error) {
+    console.error("Notification yaratilmadi:", error);
   }
 }
 

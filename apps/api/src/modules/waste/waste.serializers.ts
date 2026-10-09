@@ -16,6 +16,7 @@ export function toWasteListItem(waste: WasteWithRelations): WasteListItem {
     volume: waste.volume,
     annualVolume: waste.annualVolume,
     coverImageUrl: waste.images[0] ? imageUrl(waste.images[0].storedName) : null,
+    imageUrls: (waste.images ?? []).map((img) => imageUrl(img.storedName)),
     adminName: waste.admin.name,
     createdAt: waste.createdAt.toISOString(),
   };

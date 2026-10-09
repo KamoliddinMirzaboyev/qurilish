@@ -2,18 +2,15 @@ import { Link } from "react-router-dom";
 import { Factory } from "lucide-react";
 import type { WasteListItem } from "@buildscience/shared";
 import { Card } from "@/components/ui/Card";
+import { ImageSlider } from "@/components/ui/ImageSlider";
 
 export function WasteCard({ waste }: { waste: WasteListItem }) {
+  const slides = waste.imageUrls?.length ? waste.imageUrls : waste.coverImageUrl ? [waste.coverImageUrl] : [];
+
   return (
     <Link to={`/waste/${waste.id}`}>
       <Card className="flex h-full flex-col gap-3 transition-shadow hover:shadow-md">
-        <div className="aspect-video overflow-hidden rounded-lg bg-surface-muted">
-          {waste.coverImageUrl ? (
-            <img src={waste.coverImageUrl} alt={waste.factoryName} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full items-center justify-center text-sm text-ink-muted">Rasm yo'q</div>
-          )}
-        </div>
+        <ImageSlider images={slides} alt={waste.factoryName} className="aspect-video rounded-lg" />
         <h3 className="flex items-center gap-1.5 font-semibold text-brand-dark">
           <Factory size={16} /> {waste.factoryName}
         </h3>

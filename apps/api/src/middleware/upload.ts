@@ -58,7 +58,13 @@ function fileFilter(_req: unknown, file: Express.Multer.File, cb: multer.FileFil
 const uploadProposalAttachment = multer({
   storage,
   fileFilter,
-  limits: { fileSize: env.maxUploadMb * 1024 * 1024 },
+  limits: {
+    fileSize: env.maxUploadMb * 1024 * 1024,
+    files: 1,
+    fields: 12,
+    parts: 13,
+    fieldSize: 64 * 1024,
+  },
 }).single("attachment");
 
 async function verifyFiles(files: Express.Multer.File[]): Promise<void> {
@@ -66,7 +72,7 @@ async function verifyFiles(files: Express.Multer.File[]): Promise<void> {
     const ok = await assertMagicBytes(file.path, file.mimetype);
     if (!ok) {
       await unlinkQuietly(file.path);
-      throw AppError.badRequest("Fayl turi noto'g'ri. Faqat haqiqiy PDF, JPG yoki PNG yuklash mumkin.");
+      throw AppError.badRequest("Fayl turi noto'g'ri. Faqat haqiqiy PDF, JPG, PNG yoki WEBP yuklash mumkin.");
     }
   }
 }
@@ -78,7 +84,7 @@ export function handleProposalUpload(req: import("express").Request, res: import
         return next(AppError.badRequest(`Fayl hajmi ${env.maxUploadMb} MB dan oshmasligi kerak.`));
       }
       if (err instanceof Error && err.message === "INVALID_FILE_TYPE") {
-        return next(AppError.badRequest("Faqat PDF, JPG va PNG fayllarini yuklash mumkin."));
+        return next(AppError.badRequest("Faqat PDF, JPG, PNG va WEBP fayllarini yuklash mumkin."));
       }
       return next(err);
     }
@@ -107,7 +113,13 @@ function galleryFileFilter(_req: unknown, file: Express.Multer.File, cb: multer.
 const uploadGalleryImages = multer({
   storage: galleryStorage,
   fileFilter: galleryFileFilter,
-  limits: { fileSize: GALLERY_UPLOAD.MAX_SIZE_MB * 1024 * 1024 },
+  limits: {
+    fileSize: GALLERY_UPLOAD.MAX_SIZE_MB * 1024 * 1024,
+    files: GALLERY_UPLOAD.MAX_IMAGES,
+    fields: 20,
+    parts: GALLERY_UPLOAD.MAX_IMAGES + 20,
+    fieldSize: 64 * 1024,
+  },
 }).array("images", GALLERY_UPLOAD.MAX_IMAGES);
 
 function flattenMultipartBody(req: import("express").Request) {
@@ -150,7 +162,7 @@ export function handleGalleryUpload(req: import("express").Request, res: import(
         return next(AppError.badRequest(`Bittada ${GALLERY_UPLOAD.MAX_IMAGES} tadan ortiq rasm yuklab bo'lmaydi.`));
       }
       if (err instanceof Error && err.message === "INVALID_FILE_TYPE") {
-        return next(AppError.badRequest("Faqat JPG va PNG rasmlarini yuklash mumkin."));
+        return next(AppError.badRequest("Faqat JPG, PNG va WEBP rasmlarini yuklash mumkin."));
       }
       return next(err);
     }

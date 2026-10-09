@@ -100,6 +100,8 @@ docker compose exec api npm run db:seed
 | `WEB_ORIGIN` | Frontend manzili (CORS uchun) |
 | `UPLOAD_DIR` | Fayllar saqlanadigan papka |
 | `MAX_UPLOAD_MB` | Maksimal fayl hajmi (MB) |
+| `PASSWORD_RESET_ENABLED` | SMTP sozlangan bo'lsa parol tiklash emailini yoqadi (`1`) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | Parol tiklash emaili uchun SMTP sozlamalari |
 | `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PHONE`, `ADMIN_PASSWORD` | Seed orqali yaratiladigan SUPERADMIN ma'lumotlari |
 | `SEED_FORCE` | `production`da namunaviy muammo/taklif ma'lumotlarini majburan qayta yaratish uchun `1` qiymatini bering (standart holatda production'da bu qadam o'tkazib yuboriladi) |
 
@@ -175,7 +177,7 @@ Barcha endpointlar `/api` prefiksi bilan boshlanadi.
 
 ## Fayl yuklash qoidalari
 
-Taklif ilovasi: PDF, JPG, JPEG, PNG; maksimal 10 MB. Kon/chiqindi rasm galereyasi: JPG/PNG, bittada 6 tagacha, har
+Taklif ilovasi: PDF, JPG, JPEG, PNG, WEBP; maksimal 10 MB. Kon/chiqindi rasm galereyasi: JPG/PNG/WEBP, bittada 6 tagacha, har
 biri 10 MB gacha, ochiq (`/uploads/public`) orqali beriladi. Barcha yuklashlarda MIME va kengaytma tekshiriladi,
 fayl nomi tasodifiy generatsiya qilinadi. Taklif ilovasini yuklab olish faqat taklif egasi (foydalanuvchi), muammo
 egasi (firma) yoki SUPERADMIN uchun ruxsat etiladi.
@@ -185,6 +187,10 @@ egasi (firma) yoki SUPERADMIN uchun ruxsat etiladi.
 bcrypt parol xeshlash, HttpOnly + `secure` (production) session cookie, PostgreSQL session store, Helmet, qat'iy
 CORS, umumiy va login/register uchun alohida rate limiting, Zod validatsiya (backend — asosiy manba), soft-delete
 filtrlari, bloklangan/o'chirilgan foydalanuvchilar har bir so'rovda qayta tekshiriladi.
+
+Production ishga tushirishda faqat `docker-compose.prod.yml` dan foydalaning. `SESSION_SECRET` kamida 32 ta
+tasodifiy belgidan iborat bo'lishi kerak. Parol tiklash tokenlari bazada faqat SHA-256 hash ko'rinishida,
+30 daqiqalik muddat va bir martalik ishlatish qoidasi bilan saqlanadi; tokenlar loglarga yozilmaydi.
 
 ## Kontakt maxfiyligi
 

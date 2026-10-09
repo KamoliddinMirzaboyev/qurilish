@@ -25,9 +25,11 @@ export default {
           page: "#F8FAFC",
           card: "#FFFFFF",
           border: "#E2E8F0",
+          muted: "#F1F5F9",
         },
         ink: {
           DEFAULT: "#0F172A",
+          primary: "#0F172A",
           muted: "#475569",
         },
         danger: "#DC2626",

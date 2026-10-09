@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: buildscience
       POSTGRES_DB: buildscience
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,11 +25,13 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 4000
       DATABASE_URL: postgresql://buildscience:buildscience@postgres:5432/buildscience?schema=public
       SESSION_SECRET: ${SESSION_SECRET:-change-this-to-a-long-random-string-in-production}
       SESSION_COOKIE_NAME: bs_session
+      COOKIE_SAMESITE: lax
+      COOKIE_SECURE: 0
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8080}
       UPLOAD_DIR: uploads
       MAX_UPLOAD_MB: 10
@@ -40,7 +42,7 @@ services:
     volumes:
       - uploads_data:/repo/apps/api/uploads
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
 
   web:
     build:

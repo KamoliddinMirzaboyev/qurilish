@@ -31,10 +31,10 @@ publicRouter.get(
     }
 
     const [openProblems, matchedProblems, totalAdmins, totalUsers] = await Promise.all([
-      prisma.problem.count({ where: { status: "OPEN", deletedAt: null } }),
-      prisma.problem.count({ where: { status: "MATCHED", deletedAt: null } }),
-      prisma.user.count({ where: { role: "ADMIN", deletedAt: null } }),
-      prisma.user.count({ where: { role: "USER", deletedAt: null } }),
+      prisma.problem.count({ where: { status: "OPEN", deletedAt: null, company: { deletedAt: null, status: "ACTIVE" } } }),
+      prisma.problem.count({ where: { status: "MATCHED", deletedAt: null, company: { deletedAt: null, status: "ACTIVE" } } }),
+      prisma.user.count({ where: { role: "ADMIN", deletedAt: null, status: "ACTIVE" } }),
+      prisma.user.count({ where: { role: "USER", deletedAt: null, status: "ACTIVE" } }),
     ]);
     const stats: PublicStats = { openProblems, matchedProblems, totalAdmins, totalUsers };
     cachedStats = { data: stats, at: now };

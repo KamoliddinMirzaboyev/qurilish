@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Save, Ban, Factory, ImageIcon } from "lucide-react";
@@ -16,6 +16,8 @@ import { ApiRequestError } from "@/lib/api";
 
 export default function AdminWasteFormPage() {
   const { wasteId } = useParams();
+  const { pathname } = useLocation();
+  const listPath = pathname.startsWith("/app/admin") ? "/app/admin/waste" : "/superadmin/waste";
   const isEdit = !!wasteId;
   const navigate = useNavigate();
   const { data: existing, isLoading } = useWaste(wasteId);
@@ -52,11 +54,11 @@ export default function AdminWasteFormPage() {
       if (isEdit) {
         await updateMutation.mutateAsync({ input: values, images });
         notify.success("O'zgarishlar saqlandi.");
-        navigate("/app/admin/waste");
+        navigate(listPath);
       } else {
         await createMutation.mutateAsync({ input: values, images });
         notify.success("Chiqindi e'loni joylashtirildi.");
-        navigate("/app/admin/waste");
+        navigate(listPath);
       }
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -155,7 +157,7 @@ export default function AdminWasteFormPage() {
         </Card>
 
         <div className="flex justify-end gap-3 lg:col-span-5">
-          <Button type="button" variant="outline" onClick={() => navigate("/app/admin/waste")}>
+          <Button type="button" variant="outline" onClick={() => navigate(listPath)}>
             <Ban size={16} /> Bekor qilish
           </Button>
           <Button type="submit" isLoading={isSubmitting || createMutation.isPending || updateMutation.isPending}>

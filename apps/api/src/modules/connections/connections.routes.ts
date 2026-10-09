@@ -25,7 +25,12 @@ connectionsRouter.get(
     const user = req.user!;
     if (user.role === "ADMIN") {
       const proposals = await prisma.proposal.findMany({
-        where: { status: "ACCEPTED", deletedAt: null, scientist: { deletedAt: null }, problem: { companyId: user.id } },
+        where: {
+          status: "ACCEPTED",
+          deletedAt: null,
+          scientist: { deletedAt: null, status: "ACTIVE" },
+          problem: { companyId: user.id, deletedAt: null },
+        },
         include: { scientist: true, problem: true },
         orderBy: { acceptedAt: "desc" },
       });
@@ -45,7 +50,12 @@ connectionsRouter.get(
 
     if (user.role === "USER") {
       const proposals = await prisma.proposal.findMany({
-        where: { status: "ACCEPTED", deletedAt: null, scientistId: user.id, problem: { company: { deletedAt: null } } },
+        where: {
+          status: "ACCEPTED",
+          deletedAt: null,
+          scientistId: user.id,
+          problem: { deletedAt: null, company: { deletedAt: null, status: "ACTIVE" } },
+        },
         include: { problem: { include: { company: true } } },
         orderBy: { acceptedAt: "desc" },
       });
@@ -86,7 +96,13 @@ connectionsRouter.get(
   asyncHandler(async (req, res) => {
     const user = req.user!;
     const proposal = await prisma.proposal.findFirst({
-      where: { id: req.params.proposalId, status: "ACCEPTED", deletedAt: null },
+      where: {
+        id: req.params.proposalId,
+        status: "ACCEPTED",
+        deletedAt: null,
+        scientist: { deletedAt: null, status: "ACTIVE" },
+        problem: { deletedAt: null, company: { deletedAt: null, status: "ACTIVE" } },
+      },
       include: { scientist: true, problem: { include: { company: true } } },
     });
     if (!proposal) throw AppError.notFound("Bog'lanish topilmadi.");

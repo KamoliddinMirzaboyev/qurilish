@@ -124,6 +124,8 @@ export default function App() {
                       <Route path="/superadmin/mines/new" element={<SuperAdminMineFormPage />} />
                       <Route path="/superadmin/mines/:mineId/edit" element={<SuperAdminMineFormPage />} />
                       <Route path="/superadmin/waste" element={<SuperAdminWastePage />} />
+                      <Route path="/superadmin/waste/new" element={<AdminWasteFormPage />} />
+                      <Route path="/superadmin/waste/:wasteId/edit" element={<AdminWasteFormPage />} />
                     </Route>
                   </Route>
                 </Route>

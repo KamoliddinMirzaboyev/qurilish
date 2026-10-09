@@ -23,6 +23,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
   if (env.nodeEnv === "test") return next();
 
   const token = ensureCsrfCookie(req, res);
+  res.locals.csrfToken = token;
   if (SAFE.has(req.method.toUpperCase())) return next();
 
   const path = req.path;

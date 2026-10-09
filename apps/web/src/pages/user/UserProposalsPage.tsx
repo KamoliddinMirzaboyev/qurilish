@@ -12,7 +12,7 @@ import { ConfirmationDialog } from "@/components/ui/Modal";
 import { ProposalFormModal } from "@/components/proposals/ProposalFormModal";
 import { ConnectionCard } from "@/components/shared/ConnectionCard";
 import { notify } from "@/components/ui/toast";
-import { ApiRequestError } from "@/lib/api";
+import { ApiRequestError, API_BASE } from "@/lib/api";
 import { formatDate, formatMoney } from "@/lib/format";
 
 const tabs = [
@@ -38,6 +38,18 @@ function AcceptedPanel({ proposal }: { proposal: ProposalListItem }) {
         <ProposalStatusBadge status={proposal.status} />
       </div>
       <p className="line-clamp-3 text-sm text-ink">{proposal.solutionText}</p>
+      {proposal.attachmentOriginalName && (
+        <p className="text-sm">
+          <a
+            href={`${API_BASE}/proposals/${proposal.id}/attachment`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-brand-primary hover:underline"
+          >
+            📎 {proposal.attachmentOriginalName}
+          </a>
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-emerald-200/60 pt-3">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-emerald-800">Taklifingiz qabul qilindi!</span>
@@ -128,7 +140,16 @@ export default function UserProposalsPage() {
                   </span>
                   <span>{proposal.estimatedDays} kun</span>
                   <span>{formatDate(proposal.createdAt)}</span>
-                  {proposal.attachmentOriginalName && <span>📎 {proposal.attachmentOriginalName}</span>}
+                  {proposal.attachmentOriginalName && (
+                    <a
+                      href={`${API_BASE}/proposals/${proposal.id}/attachment`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-brand-primary hover:underline"
+                    >
+                      📎 {proposal.attachmentOriginalName}
+                    </a>
+                  )}
                 </div>
 
                 {proposal.status === "PENDING" && (

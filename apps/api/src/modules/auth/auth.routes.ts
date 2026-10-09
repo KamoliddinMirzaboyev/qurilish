@@ -26,7 +26,7 @@ import { assertPhoneAvailable } from "../../utils/unique.js";
 export const authRouter = Router();
 
 authRouter.get("/csrf", (req, res) => {
-  const csrfToken = ensureCsrfCookie(req, res);
+  const csrfToken = typeof res.locals.csrfToken === "string" ? res.locals.csrfToken : ensureCsrfCookie(req, res);
   ok(res, { csrfToken });
 });
 
@@ -247,7 +247,7 @@ authRouter.patch(
     const valid = await verifyPassword(req.body.currentPassword, req.user!.passwordHash);
     if (!valid) throw AppError.badRequest("Joriy parol noto'g'ri.", { currentPassword: ["Joriy parol noto'g'ri."] });
 
-    const newLogin: string = req.body.newLogin;
+    const newLogin: string = req.body.newLogin.toLowerCase().trim();
     const existing = await prisma.user.findUnique({ where: { email: newLogin } });
     if (existing && existing.id !== req.user!.id) {
       throw AppError.unprocessable("Bu login/email allaqachon band.", { newLogin: ["Bu login/email allaqachon band."] });

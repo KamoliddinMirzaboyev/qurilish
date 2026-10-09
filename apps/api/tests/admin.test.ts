@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { registerCompany, registerSuperadmin } from "./helpers.js";
+import { createOpenProblem, registerCompany, registerScientist, registerSuperadmin } from "./helpers.js";
 
 describe("admin moderation", () => {
   it("can block a user", async () => {
@@ -28,6 +28,39 @@ describe("admin moderation", () => {
 
     const listRes = await companyAgent.get("/api/problems");
     expect(listRes.body.data.items.find((p: { id: string }) => p.id === problemId)).toBeUndefined();
+  });
+
+  it("removes proposals attached to a moderated problem", async () => {
+    const { agent: admin } = await registerSuperadmin();
+    const { agent: companyAgent } = await registerCompany();
+    const problem = await createOpenProblem(companyAgent);
+    const { agent: scientist } = await registerScientist();
+    const proposal = await scientist
+      .post(`/api/problems/${problem.id}/proposals`)
+      .field("solutionText", "Ilmiy asoslangan yechim tavsifi. ".repeat(3))
+      .field("estimatedDays", "30")
+      .field("priceNegotiable", "true");
+    expect(proposal.status).toBe(201);
+
+    expect((await admin.delete(`/api/admin/problems/${problem.id}`)).status).toBe(204);
+    const mine = await scientist.get("/api/proposals/mine");
+    expect(mine.body.data.items).toHaveLength(0);
+  });
+
+  it("hides content owned by a blocked company from public lists", async () => {
+    const { agent: admin } = await registerSuperadmin();
+    const { agent: companyAgent, res: company } = await registerCompany();
+    const problem = await createOpenProblem(companyAgent);
+
+    await admin.patch(`/api/admin/users/${company.body.data.id}/status`).send({ status: "BLOCKED" });
+    const list = await admin.get("/api/problems");
+    expect(list.body.data.items.find((item: { id: string }) => item.id === problem.id)).toBeUndefined();
+
+    const direct = await admin.get(`/api/problems/${problem.id}`);
+    expect(direct.status).toBe(200);
+
+    const publicDirect = await companyAgent.get(`/api/problems/${problem.id}`);
+    expect(publicDirect.status).toBe(404);
   });
 
   it("cannot block itself", async () => {

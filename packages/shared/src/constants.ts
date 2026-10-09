@@ -19,19 +19,20 @@ export const LIMITS = {
   PROPOSAL_SOLUTION_MAX: 3000,
   ESTIMATED_DAYS_MIN: 1,
   ESTIMATED_DAYS_MAX: 3650,
+  MONEY_MAX: 999_999_999_999.99,
 } as const;
 
 export const UPLOAD = {
   MAX_SIZE_MB: 10,
-  ALLOWED_MIME_TYPES: ["application/pdf", "image/jpeg", "image/jpg", "image/png"],
-  ALLOWED_EXTENSIONS: [".pdf", ".jpg", ".jpeg", ".png"],
+  ALLOWED_MIME_TYPES: ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"],
+  ALLOWED_EXTENSIONS: [".pdf", ".jpg", ".jpeg", ".png", ".webp"],
 } as const;
 
 export const GALLERY_UPLOAD = {
   MAX_SIZE_MB: 10,
   MAX_IMAGES: 6,
-  ALLOWED_MIME_TYPES: ["image/jpeg", "image/jpg", "image/png"],
-  ALLOWED_EXTENSIONS: [".jpg", ".jpeg", ".png"],
+  ALLOWED_MIME_TYPES: ["image/jpeg", "image/jpg", "image/png", "image/webp"],
+  ALLOWED_EXTENSIONS: [".jpg", ".jpeg", ".png", ".webp"],
 } as const;
 
 export const MINE_LIMITS = {

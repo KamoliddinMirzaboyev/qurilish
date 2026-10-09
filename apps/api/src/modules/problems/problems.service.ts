@@ -39,6 +39,7 @@ export async function getOpenProblems(query: ProblemQuery): Promise<Paginated<Pr
   const where: Prisma.ProblemWhereInput = {
     status: "OPEN",
     deletedAt: null,
+    company: { deletedAt: null, status: "ACTIVE" },
     ...(category ? { category: category as Prisma.EnumCategoryFilter["equals"] } : {}),
     ...(budgetType ? { budgetType: budgetType as Prisma.EnumBudgetTypeFilter["equals"] } : {}),
     ...(search
@@ -140,10 +141,14 @@ export async function loadVisibleProblem(problemId: string, userId?: string, use
   });
   if (!problem) throw AppError.notFound("Muammo topilmadi.");
 
+  const isAdmin = userRole === "SUPERADMIN";
+  if (!isAdmin && (problem.company.deletedAt !== null || problem.company.status !== "ACTIVE")) {
+    throw AppError.notFound("Muammo topilmadi.");
+  }
+
   if (problem.status === "OPEN") return problem;
 
   const isOwner = userId === problem.companyId;
-  const isAdmin = userRole === "SUPERADMIN";
   if (isOwner || isAdmin) return problem;
 
   if (userId) {
@@ -296,7 +301,7 @@ export async function closeProblem(problemId: string, companyId: string): Promis
       throw AppError.conflict("Muammo allaqachon yopilgan yoki moslashgan.");
     }
     await tx.proposal.updateMany({
-      where: { problemId: existing.id, status: "PENDING" },
+      where: { problemId: existing.id, status: "PENDING", deletedAt: null },
       data: { status: "REJECTED" },
     });
     return tx.problem.findFirstOrThrow({
@@ -309,15 +314,15 @@ export async function closeProblem(problemId: string, companyId: string): Promis
     });
   });
 
-  for (const p of pending) {
-    void pushNotification({
+  await Promise.all(pending.map((p) =>
+    pushNotification({
       userId: p.scientistId,
       type: "PROBLEM_CLOSED",
       title: "E'lon yopildi",
       body: `«${existing.title}» yopildi, kutilayotgan takliflar rad etildi.`,
       link: "/app/user/proposals",
-    });
-  }
+    })
+  ));
 
   return toProblemDetail(updated as never, updated._count.proposals);
 }

@@ -9,6 +9,7 @@ import { normalizePhone } from "../../utils/phone.js";
 import { destroyUserSessions } from "../../utils/sessionAuth.js";
 import { assertPhoneAvailable } from "../../utils/unique.js";
 import { uploadPublicRoot, uploadRoot } from "../../middleware/upload.js";
+import { pushNotification } from "../../services/notifications.js";
 import { toAuthUser } from "../../utils/serializers.js";
 import { toProblemListItem } from "../problems/problems.serializers.js";
 import { toProposalListItem } from "../proposals/proposals.serializers.js";
@@ -130,10 +131,63 @@ export async function deleteUserByAdmin(userId: string, currentAdminId: string):
     throw AppError.forbidden("SUPERADMIN akkauntini o'chirib bo'lmaydi.");
   }
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { deletedAt: new Date(), status: "BLOCKED" },
+  const acceptedConnection = await prisma.proposal.findFirst({
+    where: {
+      status: "ACCEPTED",
+      deletedAt: null,
+      OR: [{ scientistId: user.id }, { problem: { companyId: user.id } }],
+    },
+    select: { id: true },
   });
+  if (acceptedConnection) {
+    throw AppError.conflict("Qabul qilingan hamkorligi bor akkauntni o'chirib bo'lmaydi. Uni bloklang.");
+  }
+
+  const [problems, mines, wastes, ownProposals] = await Promise.all([
+    prisma.problem.findMany({
+      where: { companyId: user.id, deletedAt: null },
+      include: { images: true, proposals: { where: { deletedAt: null } } },
+    }),
+    prisma.mine.findMany({ where: { adminId: user.id, deletedAt: null }, include: { images: true } }),
+    prisma.waste.findMany({ where: { adminId: user.id, deletedAt: null }, include: { images: true } }),
+    prisma.proposal.findMany({ where: { scientistId: user.id, deletedAt: null } }),
+  ]);
+  const problemIds = problems.map((problem) => problem.id);
+  const mineIds = mines.map((mine) => mine.id);
+  const wasteIds = wastes.map((waste) => waste.id);
+  const deletedAt = new Date();
+
+  await prisma.$transaction([
+    prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }),
+    prisma.proposal.updateMany({
+      where: {
+        deletedAt: null,
+        OR: [{ scientistId: user.id }, ...(problemIds.length > 0 ? [{ problemId: { in: problemIds } }] : [])],
+      },
+      data: { deletedAt },
+    }),
+    prisma.problem.updateMany({ where: { id: { in: problemIds } }, data: { deletedAt } }),
+    prisma.problemImage.deleteMany({ where: { problemId: { in: problemIds } } }),
+    prisma.mine.updateMany({ where: { id: { in: mineIds } }, data: { deletedAt } }),
+    prisma.mineImage.deleteMany({ where: { mineId: { in: mineIds } } }),
+    prisma.waste.updateMany({ where: { id: { in: wasteIds } }, data: { deletedAt } }),
+    prisma.wasteImage.deleteMany({ where: { wasteId: { in: wasteIds } } }),
+    prisma.user.update({ where: { id: user.id }, data: { deletedAt, status: "BLOCKED" } }),
+  ]);
+
+  const publicFiles = [
+    ...problems.flatMap((problem) => problem.images.map((image) => image.storedName)),
+    ...mines.flatMap((mine) => mine.images.map((image) => image.storedName)),
+    ...wastes.flatMap((waste) => waste.images.map((image) => image.storedName)),
+  ];
+  const attachments = [
+    ...ownProposals.map((proposal) => proposal.attachmentStoredName),
+    ...problems.flatMap((problem) => problem.proposals.map((proposal) => proposal.attachmentStoredName)),
+  ].filter((name): name is string => Boolean(name));
+  await Promise.all([
+    ...Array.from(new Set(publicFiles), (name) => fs.unlink(path.join(uploadPublicRoot, name)).catch(() => undefined)),
+    ...Array.from(new Set(attachments), (name) => fs.unlink(path.join(uploadRoot, name)).catch(() => undefined)),
+  ]);
   await destroyUserSessions(user.id);
 }
 
@@ -188,16 +242,39 @@ export async function getAdminProblemsList(query: {
 }
 
 export async function deleteAdminProblem(problemId: string): Promise<void> {
-  const problem = await prisma.problem.findFirst({ where: { id: problemId, deletedAt: null }, include: { images: true } });
+  const problem = await prisma.problem.findFirst({
+    where: { id: problemId, deletedAt: null },
+    include: { images: true, proposals: { where: { deletedAt: null } } },
+  });
   if (!problem) throw AppError.notFound("Muammo topilmadi.");
   if (problem.status === "MATCHED") {
     throw AppError.conflict("Moslashgan muammoni o'chirib bo'lmaydi.");
   }
+  const deletedAt = new Date();
   await prisma.$transaction([
-    prisma.problem.update({ where: { id: problem.id }, data: { deletedAt: new Date() } }),
+    prisma.proposal.updateMany({ where: { problemId: problem.id, deletedAt: null }, data: { deletedAt } }),
+    prisma.problem.update({ where: { id: problem.id }, data: { deletedAt } }),
     prisma.problemImage.deleteMany({ where: { problemId: problem.id } }),
   ]);
-  await Promise.all(problem.images.map((img) => fs.unlink(path.join(uploadPublicRoot, img.storedName)).catch(() => undefined)));
+  await Promise.all([
+    ...problem.images.map((img) => fs.unlink(path.join(uploadPublicRoot, img.storedName)).catch(() => undefined)),
+    ...problem.proposals
+      .map((proposal) => proposal.attachmentStoredName)
+      .filter((name): name is string => Boolean(name))
+      .map((name) => fs.unlink(path.join(uploadRoot, name)).catch(() => undefined)),
+  ]);
+
+  for (const proposal of problem.proposals) {
+    if (proposal.status === "PENDING") {
+      void pushNotification({
+        userId: proposal.scientistId,
+        type: "PROBLEM_CLOSED",
+        title: "Muammo o'chirildi",
+        body: `«${problem.title}» e'loni ma'muriyat tomonidan o'chirildi.`,
+        link: "/app/user/proposals",
+      });
+    }
+  }
 }
 
 export async function getAdminProposalsList(query: {

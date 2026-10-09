@@ -7,6 +7,7 @@ import { assertPhoneAvailable } from "../../utils/unique.js";
 import { destroyUserSessions } from "../../utils/sessionAuth.js";
 import { env } from "../../config/env.js";
 import type { RegisterInput } from "@buildscience/shared";
+import { sendPasswordResetEmail } from "../../services/email.js";
 
 export async function registerUser(input: RegisterInput) {
   const email = input.email.toLowerCase();
@@ -49,58 +50,40 @@ export async function authenticateUser(email: string, password: string) {
   return user;
 }
 
-function generateResetToken(userId: string, passwordHash: string): string {
-  const exp = Date.now() + 1000 * 60 * 60; // 1 hour expiration
-  const data = `${userId}:${exp}:${passwordHash.slice(-16)}`;
-  const sig = crypto.createHmac("sha256", env.sessionSecret).update(data).digest("hex");
-  const payload = JSON.stringify({ uid: userId, exp, sig });
-  return Buffer.from(payload, "utf-8").toString("base64url");
-}
-
-function verifyResetToken(token: string, passwordHash: string): { userId: string } {
-  let parsed: { uid?: string; exp?: number; sig?: string };
-  try {
-    const raw = Buffer.from(token, "base64url").toString("utf-8");
-    parsed = JSON.parse(raw);
-  } catch {
-    throw AppError.badRequest("Parolni tiklash havolasi yaroqsiz yoki buzilgan.");
-  }
-
-  if (!parsed.uid || typeof parsed.exp !== "number" || !parsed.sig) {
-    throw AppError.badRequest("Parolni tiklash havolasi yaroqsiz.");
-  }
-
-  if (Date.now() > parsed.exp) {
-    throw AppError.badRequest("Parolni tiklash havolasining muddati o'tgan. Iltimos, qaytadan so'rov yuboring.");
-  }
-
-  const expectedData = `${parsed.uid}:${parsed.exp}:${passwordHash.slice(-16)}`;
-  const expectedSig = crypto.createHmac("sha256", env.sessionSecret).update(expectedData).digest("hex");
-
-  const sigBuf = Buffer.from(parsed.sig, "hex");
-  const expectedBuf = Buffer.from(expectedSig, "hex");
-
-  if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
-    throw AppError.badRequest("Parolni tiklash havolasi yaroqsiz yoki allaqachon ishlatilgan.");
-  }
-
-  return { userId: parsed.uid };
+function hashResetToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 export async function requestPasswordReset(email: string): Promise<{ message: string; resetToken?: string }> {
   const normalizedEmail = email.toLowerCase().trim();
   const user = await prisma.user.findFirst({
     where: { email: normalizedEmail, deletedAt: null },
-    select: { id: true, email: true, passwordHash: true, status: true },
+    select: { id: true, email: true, status: true },
   });
 
-  let token: string | undefined;
+  if (!env.passwordReset.enabled && env.isProduction) {
+    throw new AppError(503, "Parolni tiklash xizmati vaqtincha mavjud emas.");
+  }
 
+  let token: string | undefined;
   if (user && user.status !== "BLOCKED") {
-    token = generateResetToken(user.id, user.passwordHash);
-    const resetUrl = `${env.webOrigin}/reset-password?token=${token}`;
-    // Production email integration hook; logs link in dev / staging
-    console.log(`[AUTH] Password reset requested for ${user.email}: ${resetUrl}`);
+    token = crypto.randomBytes(32).toString("base64url");
+    const tokenHash = hashResetToken(token);
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+    await prisma.$transaction([
+      prisma.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } }),
+      prisma.passwordResetToken.create({ data: { userId: user.id, tokenHash, expiresAt } }),
+    ]);
+
+    if (env.passwordReset.enabled) {
+      const resetUrl = `${env.webOrigin}/reset-password?token=${encodeURIComponent(token)}`;
+      try {
+        await sendPasswordResetEmail(user.email, resetUrl);
+      } catch {
+        await prisma.passwordResetToken.deleteMany({ where: { tokenHash } });
+        throw new AppError(503, "Parolni tiklash xatini yuborib bo'lmadi. Keyinroq qayta urinib ko'ring.");
+      }
+    }
   }
 
   return {
@@ -110,43 +93,32 @@ export async function requestPasswordReset(email: string): Promise<{ message: st
 }
 
 export async function resetPassword(token: string, newPassword: string): Promise<{ success: boolean }> {
-  let parsed: { uid?: string };
-  try {
-    const raw = Buffer.from(token, "base64url").toString("utf-8");
-    parsed = JSON.parse(raw);
-  } catch {
-    throw AppError.badRequest("Parolni tiklash havolasi yaroqsiz yoki buzilgan.");
-  }
-
-  if (!parsed.uid) {
-    throw AppError.badRequest("Parolni tiklash havolasi yaroqsiz.");
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: parsed.uid },
-    select: { id: true, passwordHash: true, status: true, deletedAt: true },
+  const tokenHash = hashResetToken(token);
+  const resetRecord = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash },
+    include: { user: true },
   });
 
-  if (!user || user.deletedAt) {
-    throw AppError.badRequest("Foydalanuvchi topilmadi.");
+  if (!resetRecord || resetRecord.usedAt || resetRecord.expiresAt <= new Date() || resetRecord.user.deletedAt) {
+    throw AppError.badRequest("Parolni tiklash havolasi yaroqsiz, ishlatilgan yoki muddati o'tgan.");
   }
-
-  if (user.status === "BLOCKED") {
+  if (resetRecord.user.status === "BLOCKED") {
     throw new AppError(403, "Ushbu foydalanuvchi bloklangan. Administrator bilan bog'laning.");
   }
-
-  // Cryptographically verifies signature against user's current passwordHash and checks expiration
-  verifyResetToken(token, user.passwordHash);
-
-  // Update password
   const newHash = await hashPassword(newPassword);
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { passwordHash: newHash },
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.passwordResetToken.updateMany({
+      where: { id: resetRecord.id, usedAt: null, expiresAt: { gt: new Date() } },
+      data: { usedAt: new Date() },
+    });
+    if (claimed.count !== 1) throw AppError.badRequest("Parolni tiklash havolasi allaqachon ishlatilgan.");
+    await tx.user.update({ where: { id: resetRecord.userId }, data: { passwordHash: newHash } });
+    await tx.passwordResetToken.deleteMany({
+      where: { userId: resetRecord.userId, id: { not: resetRecord.id } },
+    });
   });
 
-  // Invalidate all active sessions for this user
-  await destroyUserSessions(user.id);
+  await destroyUserSessions(resetRecord.userId);
 
   return { success: true };
 }

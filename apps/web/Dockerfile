@@ -3,7 +3,7 @@ WORKDIR /repo
 COPY package.json package-lock.json* ./
 COPY packages/shared/package.json packages/shared/package.json
 COPY apps/web/package.json apps/web/package.json
-RUN npm install --workspace=@buildscience/shared --workspace=@buildscience/web --include-workspace-root
+RUN npm ci --workspace=@buildscience/shared --workspace=@buildscience/web --include-workspace-root
 
 FROM deps AS build
 COPY tsconfig.base.json ./

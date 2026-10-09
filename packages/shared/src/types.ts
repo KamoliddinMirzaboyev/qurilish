@@ -171,6 +171,7 @@ export interface WasteListItem {
   volume: string;
   annualVolume: string;
   coverImageUrl: string | null;
+  imageUrls: string[];
   adminName: string;
   createdAt: string;
 }

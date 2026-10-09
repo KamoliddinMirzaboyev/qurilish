@@ -4,10 +4,10 @@ const isTest = process.env.NODE_ENV === "test";
 
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 300,
+  limit: 1500,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => isTest,
+  skip: (req) => isTest || req.path === "/notifications/stream" || req.originalUrl?.includes("/notifications/stream"),
 });
 
 export const authLimiter = rateLimit({

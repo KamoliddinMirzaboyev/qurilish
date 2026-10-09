@@ -25,7 +25,7 @@ healthRouter.get(
       dbOk = false;
     }
     res.status(dbOk ? 200 : 503).json({
-      success: true,
+      success: dbOk,
       data: { api: "ok", database: dbOk ? "ok" : "down" },
     });
   })

@@ -102,9 +102,8 @@ export const updateLoginSchema = z.object({
     .string({ required_error: "Yangi login/email kiriting." })
     .trim()
     .toLowerCase()
-    .min(3, "Login kamida 3 ta belgidan iborat bo'lishi kerak.")
     .max(255, "Login 255 ta belgidan oshmasligi kerak.")
-    .regex(/^[a-z0-9._@+-]+$/, "Login faqat harf, raqam va . _ @ + - belgilaridan iborat bo'lishi kerak."),
+    .email("To'g'ri email manzilini kiriting."),
   currentPassword: z.string({ required_error: "Joriy parolni kiriting." }).min(1, "Joriy parolni kiriting."),
 });
 export type UpdateLoginInput = z.infer<typeof updateLoginSchema>;
@@ -169,6 +168,7 @@ export const createProblemSchema = z
     budgetAmount: z.coerce
       .number({ invalid_type_error: "Budjet miqdorini kiriting." })
       .positive("Budjet miqdori musbat son bo'lishi kerak.")
+      .max(LIMITS.MONEY_MAX, "Budjet miqdori ruxsat etilgan chegaradan katta.")
       .optional()
       .nullable(),
   })
@@ -219,6 +219,7 @@ export const createProposalSchema = z
     proposedPrice: z.coerce
       .number({ invalid_type_error: "Taklif narxini to'g'ri kiriting.", required_error: "Taklif narxini kiriting." })
       .positive("Taklif narxi musbat son bo'lishi kerak.")
+      .max(LIMITS.MONEY_MAX, "Taklif narxi ruxsat etilgan chegaradan katta.")
       .optional()
       .nullable(),
   })

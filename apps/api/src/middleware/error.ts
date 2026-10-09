@@ -3,34 +3,38 @@ import { AppError } from "../utils/AppError.js";
 import { removeUploadedFiles } from "../utils/files.js";
 
 export function notFoundHandler(_req: Request, res: Response) {
-  res.status(404).json({ success: false, message: "So'ralgan manzil topilmadi." });
+  res.status(404).json({ success: false, message: "So'ralgan manzil topilmadi.", requestId: _req.requestId });
 }
 
 export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
   void removeUploadedFiles(req);
 
   if (err instanceof AppError) {
-    return res.status(err.status).json({ success: false, message: err.message, errors: err.errors });
+    return res.status(err.status).json({ success: false, message: err.message, errors: err.errors, requestId: req.requestId });
   }
 
   if (err instanceof SyntaxError && "status" in err && (err as { status: number }).status === 400) {
-    return res.status(400).json({ success: false, message: "So'rov formati (JSON) noto'g'ri." });
+    return res.status(400).json({ success: false, message: "So'rov formati (JSON) noto'g'ri.", requestId: req.requestId });
   }
 
   if (err && typeof err === "object" && "code" in err) {
     const prismaErr = err as { code: string; meta?: Record<string, unknown> };
     if (prismaErr.code === "P2002") {
-      return res.status(409).json({ success: false, message: "Bu ma'lumot allaqachon mavjud." });
+      return res.status(409).json({ success: false, message: "Bu ma'lumot allaqachon mavjud.", requestId: req.requestId });
     }
     if (prismaErr.code === "P2003") {
-      return res.status(400).json({ success: false, message: "Bog'liq ma'lumot topilmadi yoki cheklov buzildi." });
+      return res.status(400).json({ success: false, message: "Bog'liq ma'lumot topilmadi yoki cheklov buzildi.", requestId: req.requestId });
     }
     if (prismaErr.code === "P2025") {
-      return res.status(404).json({ success: false, message: "Talab qilingan yozuv topilmadi." });
+      return res.status(404).json({ success: false, message: "Talab qilingan yozuv topilmadi.", requestId: req.requestId });
     }
   }
 
-  console.error(err);
+  console.error(`[request_id=${req.requestId}]`, err);
 
-  return res.status(500).json({ success: false, message: "Kutilmagan server xatoligi yuz berdi. Qayta urinib ko'ring." });
+  return res.status(500).json({
+    success: false,
+    message: "Kutilmagan server xatoligi yuz berdi. Qayta urinib ko'ring.",
+    requestId: req.requestId,
+  });
 }

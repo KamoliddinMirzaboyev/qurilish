@@ -11,8 +11,8 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: env.isProduction ? "https://qurilishapi.webportfolio.uz/api" : `http://localhost:${env.port}/api`,
-        description: env.isProduction ? "Production server" : "Development server",
+        url: "/api",
+        description: "Current server",
       },
     ],
     components: {

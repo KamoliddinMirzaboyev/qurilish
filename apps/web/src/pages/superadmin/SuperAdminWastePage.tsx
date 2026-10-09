@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useAdminWasteModeration, useDeleteAdminWaste } from "@/features/admin/hooks";
 import { useDebounce } from "@/hooks/useDebounce";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput, FilterBar } from "@/components/ui/SearchInput";
 import { Card, EmptyState, CardGridSkeleton } from "@/components/ui/Card";
-import { IconButton } from "@/components/ui/Button";
+import { Button, IconButton } from "@/components/ui/Button";
 import { ConfirmationDialog } from "@/components/ui/Modal";
 import { Pagination } from "@/components/ui/Pagination";
 import { notify } from "@/components/ui/toast";
@@ -34,7 +34,15 @@ export default function SuperAdminWastePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Chiqindi e'lonlari (moderatsiya)" />
+      <PageHeader
+        title="Chiqindi e'lonlari"
+        subtitle={data ? `${data.total} ta e'lon` : undefined}
+        action={
+          <Button asLink to="/superadmin/waste/new">
+            <Plus size={16} /> Yangi e'lon
+          </Button>
+        }
+      />
 
       <FilterBar>
         <div className="min-w-[220px] flex-1">
@@ -56,9 +64,17 @@ export default function SuperAdminWastePage() {
                   {waste.volume} · {waste.adminName}
                 </p>
               </div>
-              <IconButton label="O'chirish" onClick={() => setDeleteTarget(waste.id)}>
-                <Trash2 size={16} className="text-danger" />
-              </IconButton>
+              <div className="flex items-center gap-2">
+                <Link to={`/waste/${waste.id}`} className="text-sm font-medium text-ink-muted">
+                  Ko'rish
+                </Link>
+                <Link to={`/superadmin/waste/${waste.id}/edit`} className="text-sm font-medium text-brand-primary">
+                  Tahrirlash
+                </Link>
+                <IconButton label="O'chirish" onClick={() => setDeleteTarget(waste.id)}>
+                  <Trash2 size={16} className="text-danger" />
+                </IconButton>
+              </div>
             </Card>
           ))}
         </div>

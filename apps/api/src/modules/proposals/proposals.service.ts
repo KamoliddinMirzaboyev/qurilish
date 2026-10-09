@@ -208,7 +208,7 @@ export async function createProposal(
     await removeFileSafely(existing.attachmentStoredName);
   }
 
-  void pushNotification({
+  await pushNotification({
     userId: problem.companyId,
     type: "PROPOSAL_RECEIVED",
     title: "Yangi taklif kelib tushdi",
@@ -286,24 +286,25 @@ export async function updateProposal(
 }
 
 export async function withdrawProposal(proposalId: string, user: { id: string; name: string }): Promise<ProposalListItem> {
-  const proposal = await prisma.proposal.findFirst({
-    where: { id: proposalId, deletedAt: null },
-    include: { problem: true },
-  });
-  if (!proposal) throw AppError.notFound("Taklif topilmadi.");
-  if (proposal.scientistId !== user.id) throw AppError.forbidden();
-  if (proposal.status !== "PENDING") {
-    throw AppError.conflict("Faqat kutilayotgan taklifni bekor qilish mumkin.");
-  }
-
-  const updated = await prisma.proposal.update({
-    where: { id: proposal.id },
-    data: { status: "WITHDRAWN", withdrawnAt: new Date() },
-    include: { scientist: true, problem: true },
+  const updated = await prisma.$transaction(async (tx) => {
+    const claim = await tx.proposal.updateMany({
+      where: { id: proposalId, scientistId: user.id, status: "PENDING", deletedAt: null },
+      data: { status: "WITHDRAWN", withdrawnAt: new Date() },
+    });
+    if (claim.count === 0) {
+      const current = await tx.proposal.findFirst({ where: { id: proposalId, deletedAt: null } });
+      if (!current) throw AppError.notFound("Taklif topilmadi.");
+      if (current.scientistId !== user.id) throw AppError.forbidden();
+      throw AppError.conflict("Faqat kutilayotgan taklifni bekor qilish mumkin.");
+    }
+    return tx.proposal.findFirstOrThrow({
+      where: { id: proposalId },
+      include: { scientist: true, problem: true },
+    });
   });
 
   if (updated.problem) {
-    void pushNotification({
+    await pushNotification({
       userId: updated.problem.companyId,
       type: "PROPOSAL_WITHDRAWN",
       title: "Taklif bekor qilindi",
@@ -331,17 +332,20 @@ export async function acceptProposal(proposalId: string, companyId: string): Pro
     if (!scientist) throw AppError.conflict("Olim faol emas.");
 
     const claim = await tx.problem.updateMany({
-      where: { id: problem.id, status: "OPEN" },
+      where: { id: problem.id, status: "OPEN", deletedAt: null },
       data: { status: "MATCHED", matchedAt: new Date() },
     });
     if (claim.count === 0) {
       throw AppError.conflict("Muammo allaqachon boshqa taklif bilan yopilgan.");
     }
 
-    await tx.proposal.update({
-      where: { id: proposal.id },
+    const proposalClaim = await tx.proposal.updateMany({
+      where: { id: proposal.id, status: "PENDING", deletedAt: null },
       data: { status: "ACCEPTED", acceptedAt: new Date() },
     });
+    if (proposalClaim.count === 0) {
+      throw AppError.conflict("Taklif holati o'zgargan, qabul qilib bo'lmaydi.");
+    }
 
     const pendingSiblings = await tx.proposal.findMany({
       where: { problemId: problem.id, status: "PENDING", id: { not: proposal.id }, deletedAt: null },
@@ -349,7 +353,7 @@ export async function acceptProposal(proposalId: string, companyId: string): Pro
     });
 
     await tx.proposal.updateMany({
-      where: { problemId: problem.id, status: "PENDING", id: { not: proposal.id } },
+      where: { problemId: problem.id, status: "PENDING", id: { not: proposal.id }, deletedAt: null },
       data: { status: "REJECTED" },
     });
 
@@ -360,7 +364,7 @@ export async function acceptProposal(proposalId: string, companyId: string): Pro
     };
   });
 
-  void pushNotification({
+  await pushNotification({
     userId: result.accepted.scientistId,
     type: "PROPOSAL_ACCEPTED",
     title: "Taklifingiz qabul qilindi",
@@ -368,15 +372,15 @@ export async function acceptProposal(proposalId: string, companyId: string): Pro
     link: "/app/connections",
   });
 
-  for (const rejectedScientistId of result.rejectedIds) {
-    void pushNotification({
+  await Promise.all(result.rejectedIds.map((rejectedScientistId) =>
+    pushNotification({
       userId: rejectedScientistId,
       type: "PROPOSAL_REJECTED",
       title: "Taklif rad etildi",
       body: `«${result.problemTitle}» uchun boshqa taklif tanlandi.`,
       link: "/app/user/proposals",
-    });
-  }
+    })
+  ));
 
   return toProposalListItem(result.accepted);
 }

@@ -32,7 +32,11 @@ wasteRouter.get(
   validateQuery(paginationQuerySchema),
   asyncHandler(async (req, res) => {
     const { search, page, pageSize } = paginationQuerySchema.parse(req.query);
-    const where = { deletedAt: null, ...(search ? { factoryName: { contains: search, mode: "insensitive" as const } } : {}) };
+    const where = {
+      deletedAt: null,
+      admin: { deletedAt: null, status: "ACTIVE" as const },
+      ...(search ? { factoryName: { contains: search, mode: "insensitive" as const } } : {}),
+    };
     const [waste, total] = await Promise.all([
       prisma.waste.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize, include }),
       prisma.waste.count({ where }),
@@ -62,7 +66,14 @@ wasteRouter.get(
 wasteRouter.get(
   "/waste/:wasteId",
   asyncHandler(async (req, res) => {
-    const waste = await prisma.waste.findFirst({ where: { id: req.params.wasteId, deletedAt: null }, include });
+    const waste = await prisma.waste.findFirst({
+      where: {
+        id: req.params.wasteId,
+        deletedAt: null,
+        admin: { deletedAt: null, status: "ACTIVE" },
+      },
+      include,
+    });
     if (!waste) throw AppError.notFound("Chiqindi e'loni topilmadi.");
     ok(res, toWasteDetail(waste));
   })
@@ -81,11 +92,14 @@ wasteRouter.get(
 wasteRouter.get(
   "/company/waste",
   requireAuth,
-  requireRole("ADMIN"),
+  requireRole("ADMIN", "SUPERADMIN"),
   validateQuery(paginationQuerySchema),
   asyncHandler(async (req, res) => {
     const { page, pageSize } = paginationQuerySchema.parse(req.query);
-    const where = { deletedAt: null, adminId: req.user!.id };
+    const where =
+      req.user!.role === "SUPERADMIN"
+        ? { deletedAt: null }
+        : { deletedAt: null, adminId: req.user!.id };
     const [waste, total] = await Promise.all([
       prisma.waste.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize, include }),
       prisma.waste.count({ where }),
@@ -121,7 +135,7 @@ wasteRouter.get(
 wasteRouter.post(
   "/company/waste",
   requireAuth,
-  requireRole("ADMIN"),
+  requireRole("ADMIN", "SUPERADMIN"),
   uploadLimiter,
   handleGalleryUpload,
   asyncHandler(async (req, res) => {
@@ -161,7 +175,7 @@ wasteRouter.post(
  * /company/waste/{wasteId}:
  *   patch:
  *     tags: [Waste]
- *     summary: Chiqindi e'lonini tahrirlash (o'zi joylashtirgan ADMIN, yangi rasmlar qo'shish mumkin)
+ *     summary: Chiqindi e'lonini tahrirlash (o'zi joylashtirgan ADMIN yoki SUPERADMIN, yangi rasmlar qo'shish mumkin)
  *     parameters:
  *       - in: path
  *         name: wasteId
@@ -188,13 +202,13 @@ wasteRouter.post(
 wasteRouter.patch(
   "/company/waste/:wasteId",
   requireAuth,
-  requireRole("ADMIN"),
+  requireRole("ADMIN", "SUPERADMIN"),
   uploadLimiter,
   handleGalleryUpload,
   asyncHandler(async (req, res) => {
     const existing = await prisma.waste.findFirst({ where: { id: req.params.wasteId, deletedAt: null }, include: { images: true } });
     if (!existing) throw AppError.notFound("Chiqindi e'loni topilmadi.");
-    if (existing.adminId !== req.user!.id) throw AppError.forbidden();
+    if (req.user!.role !== "SUPERADMIN" && existing.adminId !== req.user!.id) throw AppError.forbidden();
 
     const parsed = wasteSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -236,7 +250,7 @@ wasteRouter.patch(
  * /company/waste/{wasteId}/images/{imageId}:
  *   delete:
  *     tags: [Waste]
- *     summary: Chiqindi rasmini o'chirish (o'zi joylashtirgan ADMIN)
+ *     summary: Chiqindi rasmini o'chirish (o'zi joylashtirgan ADMIN yoki SUPERADMIN)
  *     parameters:
  *       - in: path
  *         name: wasteId
@@ -253,11 +267,11 @@ wasteRouter.patch(
 wasteRouter.delete(
   "/company/waste/:wasteId/images/:imageId",
   requireAuth,
-  requireRole("ADMIN"),
+  requireRole("ADMIN", "SUPERADMIN"),
   asyncHandler(async (req, res) => {
     const waste = await prisma.waste.findFirst({ where: { id: req.params.wasteId, deletedAt: null } });
     if (!waste) throw AppError.notFound("Chiqindi e'loni topilmadi.");
-    if (waste.adminId !== req.user!.id) throw AppError.forbidden();
+    if (req.user!.role !== "SUPERADMIN" && waste.adminId !== req.user!.id) throw AppError.forbidden();
 
     const image = await prisma.wasteImage.findFirst({ where: { id: req.params.imageId, wasteId: req.params.wasteId } });
     if (!image) throw AppError.notFound("Rasm topilmadi.");
@@ -272,7 +286,7 @@ wasteRouter.delete(
  * /admin/waste/{wasteId}:
  *   delete:
  *     tags: [Waste]
- *     summary: Chiqindi e'lonini o'chirish (o'zi joylashtirgan ADMIN)
+ *     summary: Chiqindi e'lonini o'chirish (o'zi joylashtirgan ADMIN yoki SUPERADMIN)
  *     parameters:
  *       - in: path
  *         name: wasteId
@@ -285,11 +299,11 @@ wasteRouter.delete(
 wasteRouter.delete(
   "/company/waste/:wasteId",
   requireAuth,
-  requireRole("ADMIN"),
+  requireRole("ADMIN", "SUPERADMIN"),
   asyncHandler(async (req, res) => {
     const waste = await prisma.waste.findFirst({ where: { id: req.params.wasteId, deletedAt: null }, include: { images: true } });
     if (!waste) throw AppError.notFound("Chiqindi e'loni topilmadi.");
-    if (waste.adminId !== req.user!.id) throw AppError.forbidden();
+    if (req.user!.role !== "SUPERADMIN" && waste.adminId !== req.user!.id) throw AppError.forbidden();
     await prisma.$transaction([
       prisma.waste.update({ where: { id: waste.id }, data: { deletedAt: new Date() } }),
       prisma.wasteImage.deleteMany({ where: { wasteId: waste.id } }),

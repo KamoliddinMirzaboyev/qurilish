@@ -23,6 +23,7 @@ export async function getPublicMines(query: { search?: string; page: number; pag
   const { search, page, pageSize } = query;
   const where: Prisma.MineWhereInput = {
     deletedAt: null,
+    admin: { deletedAt: null, status: "ACTIVE" },
     ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
   };
 
@@ -41,7 +42,10 @@ export async function getPublicMines(query: { search?: string; page: number; pag
 }
 
 export async function getMineDetailById(mineId: string): Promise<MineDetail> {
-  const mine = await prisma.mine.findFirst({ where: { id: mineId, deletedAt: null }, include });
+  const mine = await prisma.mine.findFirst({
+    where: { id: mineId, deletedAt: null, admin: { deletedAt: null, status: "ACTIVE" } },
+    include,
+  });
   if (!mine) throw AppError.notFound("Kon topilmadi.");
   return toMineDetail(mine as never);
 }

@@ -2,8 +2,21 @@ import { describe, it, expect } from "vitest";
 import { agent, registerCompany, registerScientist } from "./helpers.js";
 import { prisma } from "../src/services/prisma.js";
 import { hashPassword } from "../src/utils/password.js";
+import { env } from "../src/config/env.js";
 
 describe("auth", () => {
+  it("returns exactly one CSRF cookie when protection is enabled", async () => {
+    const originalNodeEnv = env.nodeEnv;
+    env.nodeEnv = "development";
+    try {
+      const res = await agent().get("/api/auth/csrf");
+      expect(res.status).toBe(200);
+      expect(res.headers["set-cookie"]).toHaveLength(1);
+    } finally {
+      env.nodeEnv = originalNodeEnv;
+    }
+  });
+
   it("logs an ADMIN (firma) in", async () => {
     const { res } = await registerCompany();
     expect(res.status).toBe(200);
@@ -94,10 +107,48 @@ describe("auth", () => {
     expect(res.status).toBe(422);
   });
 
-  it("allows a non-email login string (e.g. 'superadmin')", async () => {
+  it("rejects a non-email login so password recovery remains possible", async () => {
     const { agent: a } = await registerScientist("plain-login-owner@test.local");
     const res = await a.patch("/api/auth/email").send({ newLogin: "superadmin2", currentPassword: "Password123" });
-    expect(res.status).toBe(200);
-    expect(res.body.data.email).toBe("superadmin2");
+    expect(res.status).toBe(422);
+  });
+
+  it("uses a one-time password reset token", async () => {
+    await registerScientist("reset@test.local");
+    const requestRes = await agent().post("/api/auth/forgot-password").send({ email: "reset@test.local" });
+    expect(requestRes.status).toBe(200);
+    expect(requestRes.body.data.resetToken).toBeTypeOf("string");
+
+    const token = requestRes.body.data.resetToken;
+    const resetRes = await agent().post("/api/auth/reset-password").send({
+      token,
+      newPassword: "NewPassword123",
+      confirmPassword: "NewPassword123",
+    });
+    expect(resetRes.status).toBe(200);
+
+    const replayRes = await agent().post("/api/auth/reset-password").send({
+      token,
+      newPassword: "AnotherPassword123",
+      confirmPassword: "AnotherPassword123",
+    });
+    expect(replayRes.status).toBe(400);
+
+    const loginRes = await agent().post("/api/auth/login").send({ email: "reset@test.local", password: "NewPassword123" });
+    expect(loginRes.status).toBe(200);
+  });
+
+  it("enforces phone uniqueness under concurrent registration", async () => {
+    const payload = {
+      name: "Parallel User",
+      phone: "+998901111111",
+      password: "Password123",
+      passwordConfirm: "Password123",
+    };
+    const [first, second] = await Promise.all([
+      agent().post("/api/auth/register").send({ ...payload, email: "parallel-a@test.local" }),
+      agent().post("/api/auth/register").send({ ...payload, email: "parallel-b@test.local" }),
+    ]);
+    expect([first.status, second.status].sort()).toEqual([201, 409]);
   });
 });

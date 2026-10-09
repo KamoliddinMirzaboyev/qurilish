@@ -30,8 +30,7 @@ export const sessionMiddleware = session({
   cookie: {
     httpOnly: true,
     secure: env.cookieSecure,
-    // Frontend boshqa domenda (Vercel) bo'lgani uchun prod'da "none" kerak;
-    // "none" faqat secure=true (HTTPS) bilan ishlaydi.
+    // Cross-site deployment uchun "none" faqat secure=true (HTTPS) bilan ishlaydi.
     sameSite: env.cookieSameSite,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   },

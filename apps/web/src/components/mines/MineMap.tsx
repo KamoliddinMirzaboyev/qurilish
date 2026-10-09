@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -26,6 +27,9 @@ interface MineMapProps {
 }
 
 export function MineMap({ markers = [], onPick, className }: MineMapProps) {
+  const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
@@ -81,8 +85,7 @@ export function MineMap({ markers = [], onPick, className }: MineMapProps) {
               ev.preventDefault();
               const href = link.getAttribute("data-mine-nav");
               if (!href || !isSafeInternalPath(href)) return;
-              window.history.pushState({}, "", href);
-              window.dispatchEvent(new PopStateEvent("popstate"));
+              navigateRef.current(href);
             });
           });
         }

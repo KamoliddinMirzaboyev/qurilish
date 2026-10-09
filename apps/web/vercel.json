@@ -1,6 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://qurilishapi.webportfolio.uz/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

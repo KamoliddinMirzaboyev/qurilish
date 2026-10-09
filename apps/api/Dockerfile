@@ -6,7 +6,7 @@ FROM base AS deps
 COPY package.json package-lock.json* ./
 COPY packages/shared/package.json packages/shared/package.json
 COPY apps/api/package.json apps/api/package.json
-RUN npm install --workspace=@buildscience/shared --workspace=@buildscience/api --include-workspace-root
+RUN npm ci --workspace=@buildscience/shared --workspace=@buildscience/api --include-workspace-root
 
 FROM deps AS build
 COPY tsconfig.base.json ./
@@ -14,7 +14,8 @@ COPY packages/shared packages/shared
 COPY apps/api apps/api
 RUN npm run build --workspace=@buildscience/shared \
   && npm run db:generate --workspace=@buildscience/api \
-  && npm run build --workspace=@buildscience/api
+  && npm run build --workspace=@buildscience/api \
+  && npm prune --omit=dev
 
 FROM base AS runner
 ENV NODE_ENV=production

@@ -18,7 +18,7 @@ type RequestOptions = {
   isFormData?: boolean;
 };
 
-export const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
+export const API_BASE = "/api";
 
 const CSRF_COOKIE = "bs_csrf";
 const CSRF_STORAGE_KEY = "bs_csrf_token";

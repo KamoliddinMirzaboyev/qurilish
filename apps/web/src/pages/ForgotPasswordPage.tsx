@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
     <Modal open title="Parolni tiklash" onClose={() => navigate("/login")}>
       {submitted ? (
         <div className="flex flex-col gap-4 py-2">
-          <div className="rounded-xl border border-border-subtle bg-surface-muted/50 p-4 text-center">
+          <div className="rounded-xl border border-surface-border bg-surface-muted/50 p-4 text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
